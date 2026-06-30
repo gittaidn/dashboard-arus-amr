@@ -1,0 +1,531 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMR Dynamic Enterprise Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 25px; background-color: #f4f6f9; color: #333; margin: 0; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .text-center { text-align: center; }
+        .fw-bold { font-weight: bold; }
+        .text-primary { color: #1e3a8a; }
+        .text-danger { color: #dc3545; }
+        .row { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
+        .col-input { flex: 5; min-width: 250px; }
+        .col-select { flex: 2; min-width: 150px; }
+        .col-btn { flex: 2; min-width: 150px; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; }
+        .form-select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; font-weight: bold; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; }
+        .btn-success { background-color: #198754; }
+        .btn-primary { background-color: #0d6efd; }
+        .btn-warning { background-color: #ffc107; color: #000; cursor: not-allowed; }
+        .alert-success { background-color: #d1e7dd; color: #0f5132; padding: 20px; border-radius: 8px; border-left: 5px solid #198754; display: none; margin-bottom: 20px; }
+        .alert-error { background-color: #f8d7da; color: #842029; padding: 15px; border-radius: 8px; border-left: 5px solid #dc3545; margin-bottom: 25px; display: none; font-weight: bold; }
+        .search-box { width: 100%; max-width: 350px; padding: 10px; margin-bottom: 15px; border: 1px solid #0d6efd; border-radius: 6px; float: right; font-size: 14px; font-weight: bold; background-color: #fff; }
+        
+        .tabs-container { display: flex; border-bottom: 3px solid #dee2e6; margin-bottom: 25px; gap: 5px; }
+        .tab-button { padding: 12px 25px; border: none; background: #e9ecef; border-radius: 8px 8px 0 0; font-size: 15px; font-weight: bold; color: #495057; cursor: pointer; transition: 0.2s; }
+        .tab-button.active { background: #1e3a8a; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .table-responsive { width: 100%; overflow-x: auto; clear: both; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; font-size: 13px; }
+        th, td { padding: 10px; border: 1px solid #dee2e6; text-align: left; }
+        th { background-color: #1e3a8a; color: white; text-align: center; font-size: 13px; }
+        th.sortable { cursor: pointer; position: relative; user-select: none; }
+        th.sortable:hover { background-color: #2c529d; }
+        th.sortable::after { content: ' 🔼🔽'; font-size: 10px; opacity: 0.6; }
+        .sub-th { background-color: #2c529d; font-size: 12px; }
+        tr:nth-child(even) { background-color: #f8f9fa; }
+        .badge { padding: 5px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; display: inline-block; }
+        .bg-secondary { background-color: #6c757d; color: white; }
+        .bg-daya { background-color: #6f42c1; color: white; }
+        .text-end { text-align: right; }
+        .text-center-cell { text-align: center; }
+        .small-text { font-size: 11px; color: #7f8c8d; display: block; margin-top: 2px; }
+        .text-plus { color: #28a745; font-weight: bold; }
+        .text-minus { color: #dc3545; font-weight: bold; }
+        canvas { background: #fff; border: 1px solid #e0e0e0; border-radius: 4px; }
+        .label-picker { font-size: 13px; font-weight: bold; color: #495057; display: block; margin-bottom: 4px; }
+        .sub-daya-info { font-size: 11px; color: #6f42c1; font-weight: bold; display: block; margin-top: 2px; }
+        
+        #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; font-weight: bold; font-size: 18px; color: #1e3a8a; }
+    </style>
+</head>
+<body>
+
+    <div id="loadingOverlay">⏳ Sedang mengunduh database AMR historis terkompresi dari GitHub... Mohon tunggu sebentar...</div>
+
+    <div class="card text-center">
+        <h2 class="fw-bold text-primary" style="margin:0 0 5px 0;">📊 Portal Audit & Analisis Eksplorasi Tren Arus AMR</h2>
+        <p style="color:#6c757d; margin:0;">Platform Sistem Pengawasan Skala Enterprise - Versi 8.5 Optimized Data Size</p>
+    </div>
+
+    <div id="notifErrorSistem" class="alert-error">⚠️ Peringatan: Rentang waktu terbalik atau durasi melebihi batas maksimal 12 bulan!</div>
+
+    <div class="card">
+        <h4 class="text-primary" style="margin:0 0 12px 0;">Langkah 1: Pilih File CSV Data Bulan Ini / Bulan Berjalan</h4>
+        <div class="row">
+            <div class="col-input">
+                <input type="file" id="fileJuni" class="form-control" accept=".csv">
+            </div>
+        </div>
+    </div>
+
+    <div class="tabs-container">
+        <button id="btnTab1" class="tab-button active" onclick="switchMenuTab('menuTab1')">🔎 MENU 1: Audit Anomali Harian (Max Puncak)</button>
+        <button id="btnTab2" class="tab-button" onclick="switchMenuTab('menuTab2')">📈 MENU 2: Analisis Dinamis Tren Rata-Rata Bulanan</button>
+    </div>
+
+    <div id="menuTab1" class="tab-content active">
+        <div class="card" style="background:#f1f3f9;">
+            <div class="row">
+                <div class="col-select">
+                    <select id="arahDeviasi1" class="form-select text-primary">
+                        <option value="ALL">Semua Arah Deviasi</option>
+                        <option value="PLUS">Hanya Lonjakan Arus (+)</option>
+                        <option value="MINUS">Hanya Penurunan Arus (-)</option>
+                    </select>
+                </div>
+                <div class="col-select">
+                    <select id="filterDeviasi1" class="form-select text-danger">
+                        <option value="50">Batas Nilai: ≥ 50%</option>
+                        <option value="60">Batas Nilai: ≥ 60%</option>
+                        <option value="70">Batas Nilai: ≥ 70%</option>
+                        <option value="80">Batas Nilai: ≥ 80%</option>
+                        <option value="90">Batas Nilai: ≥ 90%</option>
+                    </select>
+                </div>
+                <div class="col-btn">
+                    <button id="btnProses1" onclick="eksekusiModul1()" class="btn btn-success">⚡ Jalankan Audit Menu 1</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="notifAman1" class="alert-success card">
+            <h3 style="margin:0 0 5px 0;">✅ Selesai! Data Aman (Menu 1)</h3>
+            <p style="margin:0;">Tidak ditemukan penyimpangan beban puncak harian dengan daya yang sama.</p>
+        </div>
+
+        <div class="card" id="containerHasil1" style="display:none;">
+            <div class="header-table-container">
+                <h4 class="text-danger" style="margin:0;">Hasil Analisis Rekor Arus Maksimal (Hanya Komparasi Daya Sama)</h4>
+                <div style="display: flex; gap: 10px; align-items: center; width: 60%; justify-content: flex-end;">
+                    <input type="text" id="searchMenu1" class="search-box" style="margin:0; width:60%;" onkeyup="cariTabelLokal('tabelAudit1', 'searchMenu1')" placeholder="🔍 Cari IDPel / Nama Pelanggan...">
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table id="tabelAudit1">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit1', 0, true)">ID Pelanggan</th>
+                            <th rowspan="2" class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit1', 1, false)">Nama Pelanggan</th>
+                            <th rowspan="2" class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit1', 2, true)">Daya</th>
+                            <th rowspan="2">Phasa</th>
+                            <th colspan="2" style="background-color: #198754;">DATA BULAN INI</th>
+                            <th colspan="5" style="background-color: #2b4c7e;">HISTORIS (DAYA SAMA)</th>
+                            <th rowspan="2" class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit1', 11, true)">Deviasi</th>
+                            <th rowspan="2">Status</th>
+                        </tr>
+                        <tr>
+                            <th class="sub-th sortable" style="background-color: #146c43;" onclick="urutkanKolomTabelMurni('tabelAudit1', 4, true)">Max Arus</th>
+                            <th class="sub-th" style="background-color: #146c43;">Waktu Kejadian</th>
+                            <th class="sub-th">Max Basis</th>
+                            <th class="sub-th">Tgl Max</th>
+                            <th class="sub-th">Min Basis</th>
+                            <th class="sub-th">Tgl Min</th>
+                            <th class="sub-th">Avg Basis</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bodyTabel1"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="menuTab2" class="tab-content">
+        <div class="card" style="background:#f1f3f9;">
+            <div class="row">
+                <div style="flex:2; min-width:140px;">
+                    <label class="label-picker">📅 Bulan Awal:</label>
+                    <select id="rentangAwal" class="form-select text-primary" onchange="eksekusiValidasiRentangWaktu()"></select>
+                </div>
+                <div style="flex:2; min-width:140px;">
+                    <label class="label-picker">📅 Bulan Akhir:</label>
+                    <select id="rentangAkhir" class="form-select text-primary" onchange="eksekusiValidasiRentangWaktu()"></select>
+                </div>
+                <div style="flex:4; min-width:200px;">
+                    <label class="label-picker">🎯 Filter Deviasi ($N-1$):</label>
+                    <select id="filterDeviasi2" class="form-select text-danger" onchange="prosesSaringanDropdownMenu2Only()">
+                        <option value="SHOW_ALL">✨ TAMPILKAN SEMUA (Tanpa Filter)</option>
+                        <option value="PLUS_50">Lonjakan Average: ≥ 50%</option>
+                        <option value="PLUS_70">Lonjakan Average: ≥ 70%</option>
+                        <option value="PLUS_90">Lonjakan Average: ≥ 90%</option>
+                        <option value="MINUS_50">Penurunan Average: ≥ 50%</option>
+                        <option value="MINUS_70">Penurunan Average: ≥ 70%</option>
+                        <option value="MINUS_90">Penurunan Average: ≥ 90%</option>
+                    </select>
+                </div>
+                <div class="col-btn" style="align-self: flex-end;">
+                    <button id="btnProses2" onclick="eksekusiModul2()" class="btn btn-primary">📈 Jalankan Analisis Menu 2</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="notifAman2" class="alert-success card">
+            <h3 style="margin:0 0 5px 0;">ℹ️ Informasi</h3>
+            <p style="margin:0;">Silakan masukkan file CSV di atas, lalu klik tombol biru untuk memproses.</p>
+        </div>
+
+        <div class="card" id="containerHasil2" style="display:none;">
+            <div class="header-table-container" style="margin-bottom: 15px;">
+                <h4 class="text-primary" style="margin:0;">Matriks Tren Rata-Rata Arus & Daya</h4>
+                <div style="display: flex; gap: 10px; align-items: center; width: 60%; justify-content: flex-end;">
+                    <input type="text" id="searchMenu2" class="search-box" style="margin:0; width: 60%;" onkeyup="cariTabelLokal('tabelAudit2', 'searchMenu2')" placeholder="🔍 Cari IDPel / Nama Pelanggan...">
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table id="tabelAudit2">
+                    <thead id="headTabel2"></thead>
+                    <tbody id="bodyTabel2"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let trendMaster = {};
+        let statsMaster = {};
+        let rowsJuniCache = null;
+        let arrayHasilMenu1 = [];
+        let arrayHasilMenu2 = [];
+        let urutanBulanDinamis = []; 
+        let listBulanTerpilihUser = [];
+        let arahSortState = true;
+
+        fetch('data_historical.json')
+            .then(response => response.json())
+            .then(data => {
+                trendMaster = data.trend_master;
+                statsMaster = data.stats_master;
+                document.getElementById('loadingOverlay').style.display = 'none';
+                inisialisasiDropdownRentangWaktu();
+            })
+            .catch(error => {
+                console.error("Gagal mengunduh file database JSON:", error);
+                document.getElementById('loadingOverlay').innerText = "❌ Gagal memuat database AMR. Pastikan file 'data_historical.json' ada di dalam repository.";
+            });
+
+        function switchMenuTab(tabId) {
+            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            if(tabId==='menuTab1') document.getElementById('btnTab1').classList.add('active');
+            if(tabId==='menuTab2') document.getElementById('btnTab2').classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function inisialisasiDropdownRentangWaktu(uploadYM = null) {
+            let bulanSet = new Set(['2026-01', '2026-02', '2026-03', '2026-04', '2026-05']);
+            if (uploadYM) { bulanSet.add(uploadYM); }
+            urutanBulanDinamis = Array.from(bulanSet).sort();
+            const selectAwal = document.getElementById('rentangAwal');
+            const selectAkhir = document.getElementById('rentangAkhir');
+            const isiAwalLama = selectAwal.value; const isiAkhirLama = selectAkhir.value;
+            selectAwal.innerHTML = ''; selectAkhir.innerHTML = '';
+            urutanBulanDinamis.forEach(ym => {
+                let optA = document.createElement('option'); optA.value = ym; optA.innerText = konversiLabelBulan(ym);
+                selectAwal.appendChild(optA);
+                let optB = document.createElement('option'); optB.value = ym; optB.innerText = konversiLabelBulan(ym);
+                selectAkhir.appendChild(optB);
+            });
+            selectAwal.value = isiAwalLama || urutanBulanDinamis[0];
+            selectAkhir.value = isiAkhirLama || urutanBulanDinamis[urutanBulanDinamis.length - 1];
+        }
+
+        function konversiLabelBulan(ymStr) {
+            const m = ymStr.split('-');
+            const namaBulan = ["Des", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            return namaBulan[parseInt(m[1])] + " " + m[0];
+        }
+
+        function eksekusiValidasiRentangWaktu() {
+            const awal = document.getElementById('rentangAwal').value;
+            const akhir = document.getElementById('rentangAkhir').value;
+            const idxAwal = urutanBulanDinamis.indexOf(awal);
+            const idxAkhir = urutanBulanDinamis.indexOf(akhir);
+            if (idxAwal > idxAkhir || (idxAkhir - idxAwal + 1) > 12) {
+                document.getElementById('notifErrorSistem').style.display = 'block';
+                document.getElementById('containerHasil2').style.display = 'none';
+                return;
+            }
+            document.getElementById('notifErrorSistem').style.display = 'none';
+            listBulanTerpilihUser = urutanBulanDinamis.slice(idxAwal, idxAkhir + 1);
+            if (arrayHasilMenu2.length > 0) { renderSaringanMenu2(); }
+        }
+
+        function parseCSVBawaan(text) {
+            let lines = text.split(/\r?\n/); if (lines.length < 2) return [];
+            let headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/^"|"$/g, ''));
+            let dataRows = [];
+            for (let i = 1; i < lines.length; i++) {
+                let line = lines[i].trim(); if (!line) continue;
+                let arr = [], inQuotes = false, currentStr = "";
+                for (let j = 0; j < line.length; j++) {
+                    let char = line.charAt(j);
+                    if (char === '"') { inQuotes = !inQuotes; }
+                    else if (char === ',' && !inQuotes) { arr.push(currentStr.trim().replace(/^"|"$/g, '')); currentStr = ""; }
+                    else { currentStr += char; }
+                }
+                arr.push(currentStr.trim().replace(/^"|"$/g, ''));
+                if (arr.length === headers.length) {
+                    let obj = {}; headers.forEach((h, index) => { obj[h] = arr[index]; });
+                    dataRows.push(obj);
+                }
+            }
+            return dataRows;
+        }
+
+        function muatFileCacheSaja(callback) {
+            const fileInput = document.getElementById('fileJuni');
+            if (!fileInput.files[0]) { alert("Silakan masukkan file CSV terlebih dahulu!"); return; }
+            if (rowsJuniCache) { callback(rowsJuniCache); return; }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                rowsJuniCache = parseCSVBawaan(e.target.result);
+                let detectedYM = "2026-06";
+                for (let k = 0; k < Math.min(rowsJuniCache.length, 10); k++) {
+                    if (rowsJuniCache[k]['tanggal'] && rowsJuniCache[k]['tanggal'].includes('-')) {
+                        detectedYM = rowsJuniCache[k]['tanggal'].slice(0, 7);
+                        break;
+                    }
+                }
+                inisialisasiDropdownRentangWaktu(detectedYM);
+                callback(rowsJuniCache);
+            };
+            reader.readAsText(fileInput.files[0]);
+        }
+
+        function eksekusiModul1() {
+            const btn = document.getElementById('btnProses1');
+            btn.disabled = true; btn.className = "btn btn-warning"; btn.innerHTML = "⏳ Menghitung Menu 1...";
+            setTimeout(function() {
+                muatFileCacheSaja(function(rows) {
+                    const groupMaxJuni = {};
+                    rows.forEach(row => {
+                        const idpel = row['idpel']; if (!idpel) return;
+                        if (!groupMaxJuni[idpel]) {
+                            groupMaxJuni[idpel] = { daya_juni: parseInt(row['daya']) || 0, max_r: 0, date_r: '-', max_s: 0, date_s: '-', max_t: 0, date_t: '-' };
+                        }
+                        const tgt = groupMaxJuni[idpel];
+                        ['r', 's', 't'].forEach(p => {
+                            const v = parseFloat(row['arus_' + p]) || 0;
+                            if (v > tgt['max_' + p]) { tgt['max_' + p] = v; tgt['date_' + p] = row['tanggal'] || '-'; }
+                        });
+                    });
+                    
+                    arrayHasilMenu1 = [];
+                    for (let idpel in groupMaxJuni) {
+                        const dbEntry = statsMaster[idpel];
+                        if (dbEntry) {
+                            const jData = groupMaxJuni[idpel];
+                            const dayaJuniTarget = jData.daya_juni;
+                            const dayaStr = dayaJuniTarget.toString();
+                            
+                            if (!dbEntry.daya_stats[dayaStr]) continue;
+                            const phaseStats = dbEntry.daya_stats[dayaStr];
+                            
+                            ['R', 'S', 'T'].forEach(phase => {
+                                if (!phaseStats[phase]) return;
+                                const st = phaseStats[phase];
+                                let max_j = jData['max_' + phase.toLowerCase()];
+                                
+                                if (st.max_b > 0 && max_j > 0) {
+                                    arrayHasilMenu1.push({
+                                        idpel: idpel, nama: dbEntry.nama, daya: dayaJuniTarget,
+                                        phasa: phase, arusJuni: max_j, tanggalJuni: jData['date_' + phase.toLowerCase()],
+                                        maxBasis: st.max_b, tglMaxBasis: st.date_max_b,
+                                        minBasis: st.min_b, tglMinBasis: st.date_min_b,
+                                        avgBasis: st.avg_b, devVal: (max_j - st.max_b) / st.max_b
+                                    });
+                                }
+                            });
+                        }
+                    }
+                    renderSaringanMenu1();
+                    btn.disabled = false; btn.className = "btn btn-success"; btn.innerHTML = "⚡ Jalankan Audit Menu 1";
+                });
+            }, 30);
+        }
+
+        function renderSaringanMenu1() {
+            const dirOpt = document.getElementById('arahDeviasi1').value;
+            const threshold = parseFloat(document.getElementById('filterDeviasi1').value) / 100;
+            const tbody = document.getElementById('bodyTabel1'); tbody.innerHTML = '';
+            let counter = 0;
+            arrayHasilMenu1.forEach(row => {
+                let lolos = (dirOpt === "ALL" && Math.abs(row.devVal) >= threshold) || (dirOpt === "PLUS" && row.devVal >= threshold) || (dirOpt === "MINUS" && row.devVal <= -threshold);
+                if (lolos) {
+                    counter++; const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><span class="badge bg-secondary">${row.idpel}</span></td>
+                        <td><strong>${row.nama}</strong></td>
+                        <td class="text-center-cell"><span class="badge bg-daya">${row.daya.toLocaleString()} VA</span></td>
+                        <td class="text-center-cell fw-bold text-primary">${row.phasa}</td>
+                        <td class="text-end fw-bold" style="color:#198754;">${row.arusJuni.toFixed(2)} A</td>
+                        <td><span class="small-text">${row.tanggalJuni}</span></td>
+                        <td class="text-end fw-bold">${row.maxBasis.toFixed(2)} A</td>
+                        <td><span class="small-text">${row.tglMaxBasis}</span></td>
+                        <td class="text-end text-muted">${row.minBasis.toFixed(2)} A</td>
+                        <td><span class="small-text">${row.tglMinBasis}</span></td>
+                        <td class="text-end text-muted fw-bold">${row.avgBasis.toFixed(2)} A</td>
+                        <td class="text-end ${row.devVal>=0?'text-plus':'text-minus'}">${(row.devVal*100).toFixed(1)}%</td>
+                        <td class="text-center-cell"><span class="badge" style="background-color:#dc3545; color:white;">ANOMALI</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+            });
+            document.getElementById('notifAman1').style.display = counter === 0 ? 'block' : 'none';
+            document.getElementById('containerHasil1').style.display = counter === 0 ? 'none' : 'block';
+        }
+
+        function eksekusiModul2() {
+            const btn = document.getElementById('btnProses2');
+            btn.disabled = true; btn.className = "btn btn-warning"; btn.innerHTML = "⏳ Menghitung Tren...";
+            setTimeout(function() {
+                muatFileCacheSaja(function(rows) {
+                    const sumG = {}, countG = {}, metaD = {};
+                    const idpelAktifBulanIni = new Set();
+                    rows.forEach(row => {
+                        const idpel = row['idpel']; if (!idpel) return;
+                        idpelAktifBulanIni.add(idpel.toString());
+                        sumG[idpel] = (sumG[idpel] || 0) + (parseFloat(row['arus_r'])||0) + (parseFloat(row['arus_s'])||0) + (parseFloat(row['arus_t'])||0);
+                        countG[idpel] = (countG[idpel] || 0) + 1;
+                        if (row['daya']) metaD[idpel] = parseInt(row['daya']);
+                    });
+
+                    const uploadYM = document.getElementById('rentangAkhir').value;
+                    arrayHasilMenu2 = [];
+                    for (let idpel in trendMaster) {
+                        if (!idpelAktifBulanIni.has(idpel.toString())) continue;
+                        const entry = trendMaster[idpel];
+                        const historyLengkap = {};
+                        for (let ym in entry.data_bulanan) {
+                            historyLengkap[ym] = { avg: entry.data_bulanan[ym].avg, daya: entry.data_bulanan[ym].daya };
+                        }
+                        let dTerakhir = metaD[idpel] || entry.data_bulanan[Object.keys(entry.data_bulanan).pop()].daya;
+                        if (sumG[idpel] && countG[idpel] > 0) {
+                            historyLengkap[uploadYM] = { avg: sumG[idpel] / countG[idpel], daya: dTerakhir };
+                        } else {
+                            historyLengkap[uploadYM] = { avg: 0, daya: dTerakhir };
+                        }
+                        arrayHasilMenu2.push({ idpel: idpel, nama: entry.nama, semuaBulanData: historyLengkap });
+                    }
+                    eksekusiValidasiRentangWaktu();
+                    btn.disabled = false; btn.className = "btn btn-primary"; btn.innerHTML = "📈 Jalankan Analisis Menu 2";
+                });
+            }, 30);
+        }
+
+        function renderSaringanMenu2() {
+            const headTr = document.getElementById('headTabel2');
+            let headerHtml = `<tr>
+                <th class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit2', 0, true)">ID Pelanggan</th>
+                <th class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit2', 1, false)">Nama Pelanggan</th>`;
+            let currentColIdx = 2;
+            listBulanTerpilihUser.forEach(ym => { 
+                headerHtml += `<th class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit2', ${currentColIdx}, true)">${konversiLabelBulan(ym)}</th>`; 
+                currentColIdx++;
+            });
+            headerHtml += `
+                <th class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit2', ${currentColIdx}, true)">Deviasi ($N-1$)</th>
+                <th>Grafik Tren</th>
+            </tr>`;
+            headTr.innerHTML = headerHtml;
+
+            const filterOpt = document.getElementById('filterDeviasi2').value;
+            const tbody = document.getElementById('bodyTabel2'); tbody.innerHTML = '';
+            const bulanAkhir = listBulanTerpilihUser[listBulanTerpilihUser.length - 1];
+            const idxAkhirGlobal = urutanBulanDinamis.indexOf(bulanAkhir);
+            const bulanSebelum = idxAkhirGlobal > 0 ? urutanBulanDinamis[idxAkhirGlobal - 1] : null;
+            let counter = 0;
+            arrayHasilMenu2.forEach(row => {
+                const dA = row.semuaBulanData[bulanAkhir] || { avg: 0, daya: 0 };
+                const dS = bulanSebelum ? (row.semuaBulanData[bulanSebelum] || { avg: 0, daya: 0 }) : { avg: 0, daya: 0 };
+                let devMoM = dS.avg > 0 ? (dA.avg - dS.avg) / dS.avg : 0;
+                let lolos = filterOpt === "SHOW_ALL" || (filterOpt.startsWith("PLUS") && devMoM >= parseFloat(filterOpt.split('_')[1])/100) || (filterOpt.startsWith("MINUS") && devMoM <= -parseFloat(filterOpt.split('_')[1])/100);
+                if (lolos) {
+                    counter++; const tr = document.createElement('tr');
+                    const textMoM = dS.avg === 0 ? "-" : (devMoM > 0 ? "+" : "") + (devMoM * 100).toFixed(1) + "%";
+                    const canvasId = "canvas_m2_" + row.idpel;
+                    let barisHtml = `<td><span class="badge bg-secondary">${row.idpel}</span></td><td><strong>${row.nama}</strong></td>`;
+                    let points = [];
+                    listBulanTerpilihUser.forEach(ym => {
+                        let obj = row.semuaBulanData[ym] || { avg: 0, daya: 0 }; points.push(obj.avg);
+                        barisHtml += `<td class="text-end"><strong>${obj.avg.toFixed(2)} A</strong><br><span class="sub-daya-info">${obj.daya>0?obj.daya.toLocaleString()+' VA':'-'}</span></td>`;
+                    });
+                    barisHtml += `<td class="text-end ${devMoM>=0?'text-plus':'text-minus'} fw-bold" style="vertical-align:middle;">${textMoM}</td>
+                                  <td class="text-center-cell" style="vertical-align:middle;"><canvas id="${canvasId}" width="120" height="26"></canvas></td>`;
+                    tr.innerHTML = barisHtml; tbody.appendChild(tr);
+                    drawSparklineDinamis(canvasId, points);
+                }
+            });
+            document.getElementById('notifAman2').style.display = counter === 0 ? 'block' : 'none';
+            document.getElementById('containerHasil2').style.display = counter === 0 ? 'none' : 'block';
+            let fV = document.getElementById('searchMenu2').value; if(fV) cariTabelLokal('tabelAudit2', 'searchMenu2');
+        }
+
+        function drawSparklineDinamis(canvasId, points) {
+            const canvas = document.getElementById(canvasId); if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const maxV = Math.max(...points, 1.0); const minV = Math.min(...points, 0.0);
+            const range = maxV - minV;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath(); ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 2.5;
+            const stepX = canvas.width / (points.length - 1 || 1);
+            let coords = [];
+            points.forEach((p, i) => {
+                const x = i * stepX; const y = canvas.height - ((p - minV) / range * (canvas.height - 8) + 4);
+                coords.push({x:x, y:y}); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            coords.forEach((c, i) => {
+                ctx.beginPath(); ctx.arc(c.x, c.y, i === coords.length-1 ? 3.5 : 2.5, 0, 2 * Math.PI);
+                ctx.fillStyle = i === coords.length-1 ? '#dc3545' : '#718096';
+                ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
+            });
+        }
+
+        function urutkanKolomTabelMurni(tabelId, colIndex, isNumeric) {
+            const tbody = document.getElementById(tabelId).querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            arahSortState = !arahSortState;
+            rows.sort((a, b) => {
+                let vA = a.getElementsByTagName('td')[colIndex].textContent.trim();
+                let vB = b.getElementsByTagName('td')[colIndex].textContent.trim();
+                if (isNumeric) {
+                    vA = parseFloat(vA.replace(/[^\d.-]/g, '')) || 0;
+                    vB = parseFloat(vB.replace(/[^\d.-]/g, '')) || 0;
+                    return arahSortState ? vA - vB : vB - vA;
+                }
+                return arahSortState ? vA.localeCompare(vB) : vB.localeCompare(a);
+            });
+            rows.forEach(r => tbody.appendChild(r));
+        }
+
+        function cariTabelLokal(tId, iId) {
+            let f = document.getElementById(iId).value.toLowerCase();
+            let tr = document.getElementById(tId).getElementsByTagName("tr");
+            for (let i = (tId==="tabelAudit1"?2:1); i < tr.length; i++) {
+                let id = tr[i].cells[0].textContent.toLowerCase(), nm = tr[i].cells[1].textContent.toLowerCase();
+                tr[i].style.display = (id.includes(f) || nm.includes(f)) ? "" : "none";
+            }
+        }
+
+        function prosesSaringanDropdownMenu2Only() { if (arrayHasilMenu2.length > 0) renderSaringanMenu2(); }
+    </script>
+</body>
+</html>
