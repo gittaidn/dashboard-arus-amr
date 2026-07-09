@@ -229,7 +229,7 @@
         }
 
         function inisialisasiDropdownRentangWaktu(uploadYM = null) {
-            let bulanSet = new Set(['2026-01', '2026-02', '2026-03', '2026-04', '2026-05']);
+            let bulanSet = new Set(['2026-01', '2026-02', '2026-03', '2026-04', '2026-05','2026-06']);
             if (uploadYM) { bulanSet.add(uploadYM); }
             urutanBulanDinamis = Array.from(bulanSet).sort();
             const selectAwal = document.getElementById('rentangAwal');
