@@ -486,9 +486,9 @@
         }
 
         function bukaFormCatatan(idpel) {
-            const urlBase = "https://docs.google.com/forms/d/e/1FAIpQLSd_O4TcPVLk169ck0-Qb3YI48n-PrRcMyhiRYS2el5I6Iv1wg/viewform?usp=pp_url&entry.853904015=12345"; // Ganti dengan link form kamu
-            const urlFinal = `${urlBase}?entry.${ID_ENTRY_FORM}=${idpel}`;
-            window.open(urlFinal, '_blank');
+            const urlBase = "https://docs.google.com/forms/d/e/1FAIpQLSd_O4TcPVLk169ck0-Qb3YI48n-PrRcMyhiRYS2el5I6Iv1wg/viewform"; // Ganti dengan link form kamu
+            const urlFinal = `${urlBase}?usp=pp_url&entry.${ID_ENTRY_FORM}=${idpel}`;
+window.open(urlFinal, '_blank');
         }
 
         function drawSparklineDinamis(canvasId, points) {
