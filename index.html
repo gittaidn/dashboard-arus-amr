@@ -24,13 +24,11 @@
         .alert-success { background-color: #d1e7dd; color: #0f5132; padding: 20px; border-radius: 8px; border-left: 5px solid #198754; display: none; margin-bottom: 20px; }
         .alert-error { background-color: #f8d7da; color: #842029; padding: 15px; border-radius: 8px; border-left: 5px solid #dc3545; margin-bottom: 25px; display: none; font-weight: bold; }
         .search-box { width: 100%; max-width: 350px; padding: 10px; margin-bottom: 15px; border: 1px solid #0d6efd; border-radius: 6px; float: right; font-size: 14px; font-weight: bold; background-color: #fff; }
-        
         .tabs-container { display: flex; border-bottom: 3px solid #dee2e6; margin-bottom: 25px; gap: 5px; }
         .tab-button { padding: 12px 25px; border: none; background: #e9ecef; border-radius: 8px 8px 0 0; font-size: 15px; font-weight: bold; color: #495057; cursor: pointer; transition: 0.2s; }
         .tab-button.active { background: #1e3a8a; color: white; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-
         .table-responsive { width: 100%; overflow-x: auto; clear: both; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; font-size: 13px; }
         th, td { padding: 10px; border: 1px solid #dee2e6; text-align: left; }
@@ -51,7 +49,6 @@
         canvas { background: #fff; border: 1px solid #e0e0e0; border-radius: 4px; }
         .label-picker { font-size: 13px; font-weight: bold; color: #495057; display: block; margin-bottom: 4px; }
         .sub-daya-info { font-size: 11px; color: #6f42c1; font-weight: bold; display: block; margin-top: 2px; }
-        
         #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; font-weight: bold; font-size: 18px; color: #1e3a8a; }
     </style>
 </head>
@@ -61,7 +58,7 @@
 
     <div class="card text-center">
         <h2 class="fw-bold text-primary" style="margin:0 0 5px 0;">📊 Portal Audit & Analisis Eksplorasi Tren Arus AMR</h2>
-        <p style="color:#6c757d; margin:0;">Platform Sistem Pengawasan Skala Enterprise - Versi 8.6 Stable Database</p>
+        <p style="color:#6c757d; margin:0;">Platform Sistem Pengawasan Skala Enterprise - Versi 8.8 Stable Database</p>
     </div>
 
     <div id="notifErrorSistem" class="alert-error">⚠️ Peringatan: Rentang waktu terbalik atau durasi melebihi batas maksimal 12 bulan!</div>
@@ -130,6 +127,7 @@
                             <th colspan="2" style="background-color: #198754;">DATA BULAN INI</th>
                             <th colspan="5" style="background-color: #2b4c7e;">HISTORIS (DAYA SAMA)</th>
                             <th rowspan="2" class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit1', 11, true)">Deviasi</th>
+                            <th rowspan="2">Catatan Lapangan</th>
                             <th rowspan="2">Status</th>
                         </tr>
                         <tr>
@@ -209,6 +207,8 @@
         let urutanBulanDinamis = []; 
         let listBulanTerpilihUser = [];
         let arahSortState = true;
+        // Ganti IDENTRY dengan yang ada di Notepad kamu
+        const ID_ENTRY_FORM = "853904015"; 
 
         fetch('data_historical.json')
             .then(response => response.json())
@@ -352,7 +352,8 @@
                                         phasa: phase, arusJuni: max_j, tanggalJuni: jData['date_' + phase.toLowerCase()],
                                         maxBasis: st.max_b, tglMaxBasis: st.date_max_b,
                                         minBasis: st.min_b, tglMinBasis: st.date_min_b,
-                                        avgBasis: st.avg_b, devVal: (max_j - st.max_b) / st.max_b
+                                        avgBasis: st.avg_b, devVal: (max_j - st.max_b) / st.max_b,
+                                        notes: dbEntry.notes
                                     });
                                 }
                             });
@@ -386,6 +387,7 @@
                         <td><span class="small-text">${row.tglMinBasis}</span></td>
                         <td class="text-end text-muted fw-bold">${row.avgBasis.toFixed(2)} A</td>
                         <td class="text-end ${row.devVal>=0?'text-plus':'text-minus'}">${(row.devVal*100).toFixed(1)}%</td>
+                        <td style="font-size:11px;">${row.notes ? row.notes.pesan : '-'} <br><button onclick="bukaFormCatatan('${row.idpel}')" class="btn btn-primary" style="padding:2px 5px; font-size:10px;">📝 Update</button></td>
                         <td class="text-center-cell"><span class="badge" style="background-color:#dc3545; color:white;">ANOMALI</span></td>
                     `;
                     tbody.appendChild(tr);
@@ -425,7 +427,7 @@
                         } else {
                             historyLengkap[uploadYM] = { avg: 0, daya: dTerakhir };
                         }
-                        arrayHasilMenu2.push({ idpel: idpel, nama: entry.nama, semuaBulanData: historyLengkap });
+                        arrayHasilMenu2.push({ idpel: idpel, nama: entry.nama, semuaBulanData: historyLengkap, notes: entry.notes });
                     }
                     renderSaringanMenu2();
                     btn.disabled = false; btn.className = "btn btn-primary"; btn.innerHTML = "📈 Jalankan Analisis Menu 2";
@@ -445,6 +447,7 @@
             });
             headerHtml += `
                 <th class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit2', ${currentColIdx}, true)">Deviasi ($N-1$)</th>
+                <th>Catatan Lapangan</th>
                 <th>Grafik Tren</th>
             </tr>`;
             headTr.innerHTML = headerHtml;
@@ -471,6 +474,7 @@
                         barisHtml += `<td class="text-end"><strong>${obj.avg.toFixed(2)} A</strong><br><span class="sub-daya-info">${obj.daya>0?obj.daya.toLocaleString()+' VA':'-'}</span></td>`;
                     });
                     barisHtml += `<td class="text-end ${devMoM>=0?'text-plus':'text-minus'} fw-bold" style="vertical-align:middle;">${textMoM}</td>
+                                  <td style="font-size:11px;">${row.notes ? row.notes.pesan : '-'} <br><button onclick="bukaFormCatatan('${row.idpel}')" class="btn btn-primary" style="padding:2px 5px; font-size:10px;">📝 Update</button></td>
                                   <td class="text-center-cell" style="vertical-align:middle;"><canvas id="${canvasId}" width="120" height="26"></canvas></td>`;
                     tr.innerHTML = barisHtml; tbody.appendChild(tr);
                     drawSparklineDinamis(canvasId, points);
@@ -479,6 +483,12 @@
             document.getElementById('notifAman2').style.display = counter === 0 ? 'block' : 'none';
             document.getElementById('containerHasil2').style.display = counter === 0 ? 'none' : 'block';
             let fV = document.getElementById('searchMenu2').value; if(fV) cariTabelLokal('tabelAudit2', 'searchMenu2');
+        }
+
+        function bukaFormCatatan(idpel) {
+            const urlBase = "https://docs.google.com/forms/d/e/1FAIpQLSd_O4TcPVLk169ck0-Qb3YI48n-PrRcMyhiRYS2el5I6Iv1wg/viewform?usp=pp_url&entry.853904015=12345"; // Ganti dengan link form kamu
+            const urlFinal = `${urlBase}?entry.${ID_ENTRY_FORM}=${idpel}`;
+            window.open(urlFinal, '_blank');
         }
 
         function drawSparklineDinamis(canvasId, points) {
@@ -533,11 +543,9 @@
         function exportTabelKeExcelMurni(tabelId, namaFile) {
             const tabel = document.getElementById(tabelId);
             let htmlTabel = tabel.outerHTML;
-            
             htmlTabel = htmlTabel.replace(/<canvas[^>]*>([\s\S]*?)<\/canvas>/gi, '[Sparkline]');
-            
+            htmlTabel = htmlTabel.replace(/<button[^>]*>([\s\S]*?)<\/button>/gi, '');
             const templateUang = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:office" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Sheet1</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--><meta charset="utf-8"></head><body><table>${htmlTabel}</table></body></html>`;
-            
             const dataBlob = new Blob([templateUang], { type: 'application/vnd.ms-excel' });
             const linkDownload = document.createElement('a');
             linkDownload.href = URL.createObjectURL(dataBlob);
