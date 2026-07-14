@@ -1,0 +1,27 @@
+name: Auto Update Data
+on:
+  schedule:
+    - cron: '0 0 * * *' # Ini artinya script akan jalan otomatis setiap jam 00:00 UTC (08:00 Pagi WIB)
+  workflow_dispatch: # Ini tombol manual kalau sewaktu-waktu kamu mau update instan
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with: {python-version: '3.9'}
+      - name: Install dependencies
+        run: pip install gspread pandas
+      - name: Jalankan Script Update
+        env:
+          GSPREAD_CREDENTIALS: ${{ secrets.GSPREAD_CREDENTIALS }}
+        run: python nama_script_python_kamu.py # Ganti dengan nama file Python kamu
+      - name: Commit & Push
+        run: |
+          git config user.name "Auto Bot"
+          git config user.email "bot@github.com"
+          git add data_historical.json
+          git commit -m "Update database otomatis"
+          git push
