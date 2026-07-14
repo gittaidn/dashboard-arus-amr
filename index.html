@@ -267,9 +267,8 @@
         }
 
         function parseCSVBawaan(text) {
-            let lines = text.split(/
-?
-/); if (lines.length < 2) return [];
+            let lines = text.split(/\r?\n/); 
+            if (lines.length < 2) return [];
             let headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/^"|"$/g, ''));
             let dataRows = [];
             for (let i = 1; i < lines.length; i++) {
