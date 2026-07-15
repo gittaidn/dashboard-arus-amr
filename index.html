@@ -272,8 +272,8 @@
             const cleanUP3 = String(rowUP3 || '').trim().toUpperCase();
             const cleanULP = String(rowULP || '').trim().toUpperCase();
 
-            if (filterUP3 !== "ALL" && cleanUP3 !== filterUP3) return false;
-            if (filterULP !== "ALL" && cleanULP !== filterULP) return false;
+            if (filterUP3 !== "ALL" && cleanUP3 !== filterUP3.toUpperCase()) return false;
+            if (filterULP !== "ALL" && cleanULP !== filterULP.toUpperCase()) return false;
             return true;
         }
 
