@@ -356,9 +356,8 @@
                                 
                                 if (st.max_b > 0 && max_j > 0) {
                                     // PENTING: Rumus Baru Deviasi vs Max dan Min tetap dipertahankan
-                                    let devVsMax = (max_j / st.max_b) * 100;
-                                    let devVsMin = st.min_b > 0 ? (max_j / st.min_b) * 100 : 0;
-                                    
+                                    let devVsMax = ((max_j - st.max_b) / st.max_b) * 100;
+                                    let devVsMin = st.min_b > 0 ? ((max_j - st.min_b) / st.min_b) * 100 : 0;                                    
                                     arrayHasilMenu1.push({
                                         idpel: idpel, nama: dbEntry.nama, daya: dayaJuniTarget,
                                         phasa: phase, arusJuni: max_j, tanggalJuni: jData['date_' + phase.toLowerCase()],
@@ -387,9 +386,9 @@
             
             arrayHasilMenu1.forEach(row => {
                 let selisihNormal = row.devMaxVal - 100; 
-                let lolosArah = (dirOpt === "ALL" && Math.abs(selisihNormal) >= threshold) || 
-                                (dirOpt === "PLUS" && selisihNormal >= threshold) || 
-                                (dirOpt === "MINUS" && selisihNormal <= -threshold);
+                let lolosArah = (dirOpt === "ALL" && Math.abs(row.devMaxVal) >= threshold) || 
+                                (dirOpt === "PLUS" && row.devMaxVal >= threshold) || 
+                                (dirOpt === "MINUS" && row.devMaxVal <= -threshold);
                 
                 if (lolosArah) {
                     counter++; const tr = document.createElement('tr');
