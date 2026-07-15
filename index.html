@@ -110,11 +110,10 @@
         </div>
 
         <div class="card" id="containerHasil1" style="display:none;">
-            <!-- Filter wilayah dipindah ke bawah setelah tombol eksekusi sukses -->
             <div class="inline-filter-container">
                 <div>
                     <label class="fw-bold text-primary" style="font-size:13px;">🏢 Filter UP3:</label>
-                    <select id="filterM1UP3" style="padding:5px 10px; border-radius:4px; font-weight:bold;" onchange="syncULPDropdown('filterM1UP3', 'filterM1ULP'); jalankanFilterTabelMultiKriteria('tabelAudit1', 'filterM1UP3', 'filterM1ULP', 'searchMenu1', 2)">
+                    <select id="filterM1UP3" style="padding:5px 10px; border-radius:4px; font-weight:bold;" onchange="syncULPDropdown('filterM1UP3', 'filterM1ULP'); jalankanFilterTabelMultiKriteria('tabelAudit1', 'filterM1UP3', 'filterM1ULP', 'searchMenu1', 1)">
                         <option value="ALL">ALL (Semua UP3)</option>
                         <option value="23SMD">23SMD</option>
                         <option value="23BPN">23BPN</option>
@@ -126,7 +125,7 @@
                 </div>
                 <div>
                     <label class="fw-bold text-primary" style="font-size:13px;">🏬 Filter ULP:</label>
-                    <select id="filterM1ULP" style="padding:5px 10px; border-radius:4px; font-weight:bold;" onchange="jalankanFilterTabelMultiKriteria('tabelAudit1', 'filterM1UP3', 'filterM1ULP', 'searchMenu1', 2)">
+                    <select id="filterM1ULP" style="padding:5px 10px; border-radius:4px; font-weight:bold;" onchange="jalankanFilterTabelMultiKriteria('tabelAudit1', 'filterM1UP3', 'filterM1ULP', 'searchMenu1', 1)">
                         <option value="ALL">ALL (Semua ULP)</option>
                     </select>
                 </div>
@@ -136,7 +135,7 @@
                 <h4 class="text-danger" style="margin:0;">Hasil Analisis Rekor Arus Maksimal (Hanya Komparasi Daya Sama)</h4>
                 <div style="display: flex; gap: 15px; align-items: center; width: 60%; justify-content: flex-end;">
                     <button onclick="exportTabelKeExcelMurni('tabelAudit1', 'Hasil_Audit_Anomali_M1')" class="btn btn-success" style="width: auto; padding: 8px 15px; margin: 0; font-size: 13px;">🟢 Export Hasil Audit ke Excel</button>
-                    <input type="text" id="searchMenu1" class="search-box" style="margin:0; width:50%;" onkeyup="jalankanFilterTabelMultiKriteria('tabelAudit1', 'filterM1UP3', 'filterM1ULP', 'searchMenu1', 2)" placeholder="🔍 Cari IDPel / Nama Pelanggan...">
+                    <input type="text" id="searchMenu1" class="search-box" style="margin:0; width:50%;" onkeyup="jalankanFilterTabelMultiKriteria('tabelAudit1', 'filterM1UP3', 'filterM1ULP', 'searchMenu1', 1)" placeholder="🔍 Cari IDPel / Nama Pelanggan...">
                 </div>
             </div>
             <div class="table-responsive">
@@ -206,7 +205,6 @@
         </div>
 
         <div class="card" id="containerHasil2" style="display:none;">
-            <!-- Filter wilayah Menu 2 dipindah ke bawah setelah tabel aktif -->
             <div class="inline-filter-container">
                 <div>
                     <label class="fw-bold text-primary" style="font-size:13px;">🏢 Filter UP3:</label>
@@ -263,7 +261,6 @@
             "23IKN": ["23600"]
         };
 
-        // Fungsi sinkronisasi dropdown ULP berantai
         function syncULPDropdown(up3Id, ulpId) {
             const up3Val = document.getElementById(up3Id).value;
             const ulpSelect = document.getElementById(ulpId);
@@ -277,7 +274,7 @@
             }
         }
 
-        // FUNGSI UTAMA BARU: Menyaring baris tabel secara real-time dari data DOM (Aman dari crash!)
+        // FUNGSI UTAMA YANG FIX: Membaca data wilayah dari tag tersembunyi '.data-wilayah'
         function jalankanFilterTabelMultiKriteria(tabelId, up3SelectId, ulpSelectId, searchInputId, namaColIndex) {
             const up3Filter = document.getElementById(up3SelectId).value.toUpperCase();
             const ulpFilter = document.getElementById(ulpSelectId).value.toUpperCase();
@@ -286,20 +283,29 @@
             const table = document.getElementById(tabelId);
             const trs = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
             
-            // Header baris pembatas (Menu 1 butuh loncat 2 row header, Menu 2 butuh 1 row header)
             for (let i = 0; i < trs.length; i++) {
                 const row = trs[i];
                 const cells = row.getElementsByTagName("td");
                 if (cells.length < 2) continue;
                 
                 const idpel = cells[0].textContent.toLowerCase();
-                // Nama kolom sekarang memuat info wilayah (dikombinasikan di textContent)
-                const namaDanWilayahText = cells[namaColIndex].textContent.toUpperCase();
+                const namaPelanggan = cells[namaColIndex].textContent.toLowerCase();
                 
-                // Cari apakah string memuat kode UP3 & ULP (Misal: "23SMD", "23100")
-                let cocokUP3 = (up3Filter === "ALL") || namaDanWilayahText.includes(up3Filter);
-                let cocokULP = (ulpFilter === "ALL") || namaDanWilayahText.includes(ulpFilter);
-                let cocokSearch = idpel.includes(searchKeyword) || cells[namaColIndex].textContent.toLowerCase().includes(searchKeyword);
+                // Cari data UP3 & ULP murni hasil titipan render di kolom status/terakhir
+                const kolomTerakhir = cells[cells.length - 1];
+                const elemenWilayah = kolomTerakhir.querySelector('.data-wilayah');
+                
+                let rowUP3 = "";
+                let rowULP = "";
+                if (elemenWilayah) {
+                    const dataSplit = elemenWilayah.textContent.split('|');
+                    rowUP3 = dataSplit[0].trim().toUpperCase();
+                    rowULP = dataSplit[1].trim().toUpperCase();
+                }
+                
+                let cocokUP3 = (up3Filter === "ALL") || (rowUP3 === up3Filter);
+                let cocokULP = (ulpFilter === "ALL") || (rowULP === ulpFilter);
+                let cocokSearch = idpel.includes(searchKeyword) || namaPelanggan.includes(searchKeyword);
                 
                 if (cocokUP3 && cocokULP && cocokSearch) {
                     row.style.display = "";
@@ -495,7 +501,7 @@
                     counter++; const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td><span class="badge bg-secondary">${row.idpel}</span></td>
-                        <td><strong>${row.nama}</strong><br><span class="small-text">${row.up3.toUpperCase()} - ULP ${row.ulp.toUpperCase()}</span></td>
+                        <td><strong>${row.nama}</strong></td>
                         <td class="text-center-cell"><span class="badge bg-daya">${row.daya.toLocaleString()} VA</span></td>
                         <td class="text-center-cell fw-bold text-primary">${row.phasa}</td>
                         <td class="text-end fw-bold" style="color:#198754;">${row.arusJuni.toFixed(2)} A</td>
@@ -508,7 +514,10 @@
                         <td class="text-end fw-bold text-primary">${row.devMaxVal.toFixed(1)}%</td>
                         <td class="text-end fw-bold text-primary">${row.devMinVal.toFixed(1)}%</td>
                         <td style="font-size:11px;">${row.notes ? row.notes.pesan : '-'} <br><button onclick="bukaFormCatatan('${row.idpel}')" class="btn btn-primary" style="padding:2px 5px; font-size:10px;">📝 Update</button></td>
-                        <td class="text-center-cell"><span class="badge" style="background-color:#dc3545; color:white;">ANOMALI</span></td>
+                        <td class="text-center-cell">
+                            <span class="badge" style="background-color:#dc3545; color:white;">ANOMALI</span>
+                            <span style="display:none;" class="data-wilayah">${row.up3}|${row.ulp}</span>
+                        </td>
                     `;
                     tbody.appendChild(tr);
                 }
@@ -516,8 +525,7 @@
             document.getElementById('notifAman1').style.display = counter === 0 ? 'block' : 'none';
             document.getElementById('containerHasil1').style.display = counter === 0 ? 'none' : 'block';
             
-            // Picu pemfilteran DOM instan untuk menyesuaikan pilihan dropdown saat ini
-            jalankanFilterTabelMultiKriteria('tabelAudit1', 'filterM1UP3', 'filterM1ULP', 'searchMenu1', 2);
+            jalankanFilterTabelMultiKriteria('tabelAudit1', 'filterM1UP3', 'filterM1ULP', 'searchMenu1', 1);
         }
 
         function eksekusiModul2() {
@@ -604,7 +612,7 @@
                     counter++; const tr = document.createElement('tr');
                     const textMoM = dS.avg === 0 ? "-" : (devMoM > 0 ? "+" : "") + (devMoM * 100).toFixed(1) + "%";
                     const canvasId = "canvas_m2_" + row.idpel;
-                    let barisHtml = `<td><span class="badge bg-secondary">${row.idpel}</span></td><td><strong>${row.nama}</strong><br><span class="small-text">${row.up3.toUpperCase()} - ULP ${row.ulp.toUpperCase()}</span></td>`;
+                    let barisHtml = `<td><span class="badge bg-secondary">${row.idpel}</span></td><td><strong>${row.nama}</strong></td>`;
                     let points = [];
                     listBulanTerpilihUser.forEach(ym => {
                         let obj = row.semuaBulanData[ym] || { avg: 0, daya: 0 }; points.push(obj.avg);
@@ -612,7 +620,10 @@
                     });
                     barisHtml += `<td class="text-end ${devMoM>=0?'text-plus':'text-minus'} fw-bold" style="vertical-align:middle;">${textMoM}</td>
                                   <td style="font-size:11px;">${row.notes ? row.notes.pesan : '-'} <br><button onclick="bukaFormCatatan('${row.idpel}')" class="btn btn-primary" style="padding:2px 5px; font-size:10px;">📝 Update</button></td>
-                                  <td class="text-center-cell" style="vertical-align:middle;"><canvas id="${canvasId}" width="120" height="26"></canvas></td>`;
+                                  <td class="text-center-cell" style="vertical-align:middle;">
+                                      <canvas id="${canvasId}" width="120" height="26"></canvas>
+                                      <span style="display:none;" class="data-wilayah">${row.up3}|${row.ulp}</span>
+                                  </td>`;
                     tr.innerHTML = barisHtml; tbody.appendChild(tr);
                     drawSparklineDinamis(canvasId, points);
                 }
@@ -620,7 +631,6 @@
             document.getElementById('notifAman2').style.display = counter === 0 ? 'block' : 'none';
             document.getElementById('containerHasil2').style.display = counter === 0 ? 'none' : 'block';
             
-            // Picu pemfilteran DOM instan untuk menyesuaikan pilihan dropdown saat ini
             jalankanFilterTabelMultiKriteria('tabelAudit2', 'filterM2UP3', 'filterM2ULP', 'searchMenu2', 1);
         }
 
