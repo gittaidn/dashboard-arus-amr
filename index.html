@@ -274,38 +274,38 @@
             }
         }
 
-        // FUNGSI UTAMA YANG FIX: Membaca data wilayah dari tag tersembunyi '.data-wilayah'
+        // FUNGSI UTAMA YANG FIX & ROBUST: Membaca murni dari Atribut baris (data-up3 dan data-ulp)
         function jalankanFilterTabelMultiKriteria(tabelId, up3SelectId, ulpSelectId, searchInputId, namaColIndex) {
             const up3Filter = document.getElementById(up3SelectId).value.toUpperCase();
             const ulpFilter = document.getElementById(ulpSelectId).value.toUpperCase();
             const searchKeyword = document.getElementById(searchInputId).value.toLowerCase();
             
             const table = document.getElementById(tabelId);
-            const trs = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+            if (!table) return;
+            const tbody = table.querySelector("tbody");
+            if (!tbody) return;
+            const trs = tbody.querySelectorAll("tr");
             
             for (let i = 0; i < trs.length; i++) {
                 const row = trs[i];
-                const cells = row.getElementsByTagName("td");
+                const cells = row.querySelectorAll("td");
                 if (cells.length < 2) continue;
                 
                 const idpel = cells[0].textContent.toLowerCase();
-                const namaPelanggan = cells[namaColIndex].textContent.toLowerCase();
+                const namaPelanggan = cells[namaColIndex] ? cells[namaColIndex].textContent.toLowerCase() : "";
                 
-                // Cari data UP3 & ULP murni hasil titipan render di kolom status/terakhir
-                const kolomTerakhir = cells[cells.length - 1];
-                const elemenWilayah = kolomTerakhir.querySelector('.data-wilayah');
-                
-                let rowUP3 = "";
-                let rowULP = "";
-                if (elemenWilayah) {
-                    const dataSplit = elemenWilayah.textContent.split('|');
-                    rowUP3 = dataSplit[0].trim().toUpperCase();
-                    rowULP = dataSplit[1].trim().toUpperCase();
-                }
+                // Ambil data murni dari tulang baris tabel (sangat aman)
+                const rowUP3 = (row.getAttribute('data-up3') || "").trim();
+                const rowULP = (row.getAttribute('data-ulp') || "").trim();
                 
                 let cocokUP3 = (up3Filter === "ALL") || (rowUP3 === up3Filter);
                 let cocokULP = (ulpFilter === "ALL") || (rowULP === ulpFilter);
-                let cocokSearch = idpel.includes(searchKeyword) || namaPelanggan.includes(searchKeyword);
+                
+                // Pencarian juga diizinkan mencari berdasarkan kode UP3/ULP
+                let cocokSearch = idpel.includes(searchKeyword) || 
+                                  namaPelanggan.includes(searchKeyword) || 
+                                  rowUP3.toLowerCase().includes(searchKeyword) || 
+                                  rowULP.toLowerCase().includes(searchKeyword);
                 
                 if (cocokUP3 && cocokULP && cocokSearch) {
                     row.style.display = "";
@@ -425,15 +425,22 @@
                 muatFileCacheSaja(function(rows) {
                     const groupMaxJuni = {};
                     rows.forEach(row => {
-                        const idpel = row['idpel']; if (!idpel) return;
+                        // Fitur proteksi pencarian kolom: antisipasi nama kolom melenceng
+                        let keys = Object.keys(row);
+                        let up3Key = keys.find(k => k.trim().toLowerCase() === 'up3') || 'up3';
+                        let ulpKey = keys.find(k => k.trim().toLowerCase() === 'ulp') || 'ulp';
+                        
+                        const idpel = row['idpel'] || row[keys.find(k => k.trim().toLowerCase() === 'idpel')]; 
+                        if (!idpel) return;
+                        
                         if (!groupMaxJuni[idpel]) {
                             groupMaxJuni[idpel] = { 
                                 daya_juni: parseInt(row['daya']) || 0, 
                                 max_r: 0, date_r: '-', 
                                 max_s: 0, date_s: '-', 
                                 max_t: 0, date_t: '-',
-                                csv_up3: row['up3'] || '', 
-                                csv_ulp: row['ulp'] || '' 
+                                csv_up3: row[up3Key] || '', 
+                                csv_ulp: row[ulpKey] || '' 
                             };
                         }
                         const tgt = groupMaxJuni[idpel];
@@ -499,6 +506,10 @@
                 
                 if (lolosArah) {
                     counter++; const tr = document.createElement('tr');
+                    // Menyematkan data murni ke atribut tr agar tidak bocor atau hilang
+                    tr.setAttribute('data-up3', (row.up3 || "").toString().trim().toUpperCase());
+                    tr.setAttribute('data-ulp', (row.ulp || "").toString().trim().toUpperCase());
+                    
                     tr.innerHTML = `
                         <td><span class="badge bg-secondary">${row.idpel}</span></td>
                         <td><strong>${row.nama}</strong></td>
@@ -514,10 +525,7 @@
                         <td class="text-end fw-bold text-primary">${row.devMaxVal.toFixed(1)}%</td>
                         <td class="text-end fw-bold text-primary">${row.devMinVal.toFixed(1)}%</td>
                         <td style="font-size:11px;">${row.notes ? row.notes.pesan : '-'} <br><button onclick="bukaFormCatatan('${row.idpel}')" class="btn btn-primary" style="padding:2px 5px; font-size:10px;">📝 Update</button></td>
-                        <td class="text-center-cell">
-                            <span class="badge" style="background-color:#dc3545; color:white;">ANOMALI</span>
-                            <span style="display:none;" class="data-wilayah">${row.up3}|${row.ulp}</span>
-                        </td>
+                        <td class="text-center-cell"><span class="badge" style="background-color:#dc3545; color:white;">ANOMALI</span></td>
                     `;
                     tbody.appendChild(tr);
                 }
@@ -536,13 +544,19 @@
                     const sumG = {}, countG = {}, metaD = {}, mappingWilayahM2 = {};
                     const idpelAktifBulanIni = new Set();
                     rows.forEach(row => {
-                        const idpel = row['idpel']; if (!idpel) return;
+                        let keys = Object.keys(row);
+                        let up3Key = keys.find(k => k.trim().toLowerCase() === 'up3') || 'up3';
+                        let ulpKey = keys.find(k => k.trim().toLowerCase() === 'ulp') || 'ulp';
+                        
+                        const idpel = row['idpel'] || row[keys.find(k => k.trim().toLowerCase() === 'idpel')]; 
+                        if (!idpel) return;
+                        
                         idpelAktifBulanIni.add(idpel.toString());
                         sumG[idpel] = (sumG[idpel] || 0) + (parseFloat(row['arus_r'])||0) + (parseFloat(row['arus_s'])||0) + (parseFloat(row['arus_t'])||0);
                         countG[idpel] = (countG[idpel] || 0) + 1;
                         if (row['daya']) metaD[idpel] = parseInt(row['daya']);
                         if (!mappingWilayahM2[idpel]) {
-                            mappingWilayahM2[idpel] = { up3: row['up3'] || '', ulp: row['ulp'] || '' };
+                            mappingWilayahM2[idpel] = { up3: row[up3Key] || '', ulp: row[ulpKey] || '' };
                         }
                     });
 
@@ -610,6 +624,10 @@
                 
                 if (lolos) {
                     counter++; const tr = document.createElement('tr');
+                    // Menyematkan data murni ke atribut tr
+                    tr.setAttribute('data-up3', (row.up3 || "").toString().trim().toUpperCase());
+                    tr.setAttribute('data-ulp', (row.ulp || "").toString().trim().toUpperCase());
+                    
                     const textMoM = dS.avg === 0 ? "-" : (devMoM > 0 ? "+" : "") + (devMoM * 100).toFixed(1) + "%";
                     const canvasId = "canvas_m2_" + row.idpel;
                     let barisHtml = `<td><span class="badge bg-secondary">${row.idpel}</span></td><td><strong>${row.nama}</strong></td>`;
@@ -622,7 +640,6 @@
                                   <td style="font-size:11px;">${row.notes ? row.notes.pesan : '-'} <br><button onclick="bukaFormCatatan('${row.idpel}')" class="btn btn-primary" style="padding:2px 5px; font-size:10px;">📝 Update</button></td>
                                   <td class="text-center-cell" style="vertical-align:middle;">
                                       <canvas id="${canvasId}" width="120" height="26"></canvas>
-                                      <span style="display:none;" class="data-wilayah">${row.up3}|${row.ulp}</span>
                                   </td>`;
                     tr.innerHTML = barisHtml; tbody.appendChild(tr);
                     drawSparklineDinamis(canvasId, points);
