@@ -50,6 +50,7 @@
         .label-picker { font-size: 13px; font-weight: bold; color: #495057; display: block; margin-bottom: 4px; }
         .sub-daya-info { font-size: 11px; color: #6f42c1; font-weight: bold; display: block; margin-top: 2px; }
         #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; font-weight: bold; font-size: 18px; color: #1e3a8a; }
+        .filter-wilayah-container { background: #e2e8f0; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
@@ -65,9 +66,33 @@
 
     <div class="card">
         <h4 class="text-primary" style="margin:0 0 12px 0;">Langkah 1: Pilih File CSV Data Bulan Ini / Bulan Berjalan</h4>
-        <div class="row">
+        <div class="row" style="margin-bottom: 15px;">
             <div class="col-input">
                 <input type="file" id="fileJuni" class="form-control" accept=".csv">
+            </div>
+        </div>
+
+        <!-- Filter Wilayah Global Berdasarkan File CSV -->
+        <div class="filter-wilayah-container">
+            <div class="row">
+                <div style="flex:1; min-width:200px;">
+                    <label class="label-picker">🏢 Filter Wilayah UP3:</label>
+                    <select id="globalFilterUP3" class="form-select text-primary" onchange="updateUlpDropdownOptions(); triggerFilterUlangSemuaMenu();">
+                        <option value="ALL">ALL (Semua UP3)</option>
+                        <option value="23SMD">23SMD</option>
+                        <option value="23BPN">23BPN</option>
+                        <option value="23BRU">23BRU</option>
+                        <option value="23BTG">23BTG</option>
+                        <option value="23KTR">23KTR</option>
+                        <option value="23IKN">23IKN</option>
+                    </select>
+                </div>
+                <div style="flex:1; min-width:200px;">
+                    <label class="label-picker">🏬 Filter Wilayah ULP:</label>
+                    <select id="globalFilterULP" class="form-select text-primary" onchange="triggerFilterUlangSemuaMenu();">
+                        <option value="ALL">ALL (Semua ULP)</option>
+                    </select>
+                </div>
             </div>
         </div>
     </div>
@@ -81,14 +106,14 @@
         <div class="card" style="background:#f1f3f9;">
             <div class="row">
                 <div class="col-select">
-                    <select id="arahDeviasi1" class="form-select text-primary">
+                    <select id="arahDeviasi1" class="form-select text-primary" onchange="renderSaringanMenu1()">
                         <option value="ALL">Semua Arah Deviasi</option>
                         <option value="PLUS">Hanya Lonjakan Arus (+)</option>
                         <option value="MINUS">Hanya Penurunan Arus (-)</option>
                     </select>
                 </div>
                 <div class="col-select">
-                    <select id="filterDeviasi1" class="form-select text-danger">
+                    <select id="filterDeviasi1" class="form-select text-danger" onchange="renderSaringanMenu1()">
                         <option value="50">Batas Nilai: ≥ 50%</option>
                         <option value="60">Batas Nilai: ≥ 60%</option>
                         <option value="70">Batas Nilai: ≥ 70%</option>
@@ -104,7 +129,7 @@
 
         <div id="notifAman1" class="alert-success card">
             <h3 style="margin:0 0 5px 0;">✅ Selesai! Data Aman (Menu 1)</h3>
-            <p style="margin:0;">Tidak ditemukan penyimpangan beban puncak harian dengan daya yang sama.</p>
+            <p style="margin:0;">Tidak ditemukan penyimpangan beban puncak harian dengan daya yang sama atau data tidak cocok dengan filter wilayah.</p>
         </div>
 
         <div class="card" id="containerHasil1" style="display:none;">
@@ -125,7 +150,8 @@
                             <th rowspan="2">Phasa</th>
                             <th colspan="2" style="background-color: #198754;">DATA BULAN INI</th>
                             <th colspan="5" style="background-color: #2b4c7e;">HISTORIS (DAYA SAMA)</th>
-                            <th rowspan="2" class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit1', 11, true)">Deviasi</th>
+                            <th rowspan="2" class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit1', 11, true)">Deviasi vs Max</th>
+                            <th rowspan="2" class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit1', 12, true)">Deviasi vs Min</th>
                             <th rowspan="2">Catatan Lapangan</th>
                             <th rowspan="2">Status</th>
                         </tr>
@@ -205,6 +231,51 @@
         let urutanBulanDinamis = []; 
         let listBulanTerpilihUser = [];
         let arahSortState = true;
+        
+        // Peta ULP berdasarkan UP3 sesuai spesifikasi request user
+        const ulpMapping = {
+            "23SMD": ["23100", "23102", "23112", "23120", "23141", "23156", "23157"],
+            "23BPN": ["23200", "23201", "23211", "23220", "23222", "23230"],
+            "23BRU": ["23300", "23350"],
+            "23BTG": ["23400", "23420"],
+            "23KTR": ["23510", "23520", "23530"],
+            "23IKN": ["23600"]
+        };
+
+        // Fungsi memperbarui pilihan dropdown ULP berantai
+        function updateUlpDropdownOptions() {
+            const selectedUP3 = document.getElementById("globalFilterUP3").value;
+            const ulpSelect = document.getElementById("globalFilterULP");
+            
+            ulpSelect.innerHTML = '<option value="ALL">ALL (Semua ULP)</option>';
+            
+            if (selectedUP3 !== "ALL" && ulpMapping[selectedUP3]) {
+                ulpMapping[selectedUP3].forEach(ulp => {
+                    const opt = document.createElement("option");
+                    opt.value = opt.textContent = ulp;
+                    ulpSelect.appendChild(opt);
+                });
+            }
+        }
+
+        // Memicu rendering ulang jika filter wilayah diubah secara dinamis
+        function triggerFilterUlangSemuaMenu() {
+            if (arrayHasilMenu1.length > 0) renderSaringanMenu1();
+            if (arrayHasilMenu2.length > 0) renderSaringanMenu2();
+        }
+
+        // Mengecek kecocokan baris data berdasarkan filter UP3 dan ULP
+        function cekLolosFilterWilayah(rowUP3, rowULP) {
+            const filterUP3 = document.getElementById("globalFilterUP3").value;
+            const filterULP = document.getElementById("globalFilterULP").value;
+
+            const cleanUP3 = String(rowUP3 || '').trim().toUpperCase();
+            const cleanULP = String(rowULP || '').trim().toUpperCase();
+
+            if (filterUP3 !== "ALL" && cleanUP3 !== filterUP3) return false;
+            if (filterULP !== "ALL" && cleanULP !== filterULP) return false;
+            return true;
+        }
 
         fetch('data_historical.json')
             .then(response => response.json())
@@ -318,7 +389,14 @@
                     rows.forEach(row => {
                         const idpel = row['idpel']; if (!idpel) return;
                         if (!groupMaxJuni[idpel]) {
-                            groupMaxJuni[idpel] = { daya_juni: parseInt(row['daya']) || 0, max_r: 0, date_r: '-', max_s: 0, date_s: '-', max_t: 0, date_t: '-' };
+                            groupMaxJuni[idpel] = { 
+                                daya_juni: parseInt(row['daya']) || 0, 
+                                max_r: 0, date_r: '-', 
+                                max_s: 0, date_s: '-', 
+                                max_t: 0, date_t: '-',
+                                csv_up3: row['up3'] || '', 
+                                csv_ulp: row['ulp'] || '' 
+                            };
                         }
                         const tgt = groupMaxJuni[idpel];
                         ['r', 's', 't'].forEach(p => {
@@ -344,12 +422,20 @@
                                 let max_j = jData['max_' + phase.toLowerCase()];
                                 
                                 if (st.max_b > 0 && max_j > 0) {
+                                    // Penghitungan 2 rumus deviasi baru sesuai spesifikasi request
+                                    let devVsMax = (max_j / st.max_b) * 100;
+                                    let devVsMin = st.min_b > 0 ? (max_j / st.min_b) * 100 : 0;
+                                    
                                     arrayHasilMenu1.push({
                                         idpel: idpel, nama: dbEntry.nama, daya: dayaJuniTarget,
                                         phasa: phase, arusJuni: max_j, tanggalJuni: jData['date_' + phase.toLowerCase()],
                                         maxBasis: st.max_b, tglMaxBasis: st.date_max_b,
                                         minBasis: st.min_b, tglMinBasis: st.date_min_b,
-                                        avgBasis: st.avg_b, devVal: (max_j - st.max_b) / st.max_b,
+                                        avgBasis: st.avg_b, 
+                                        devMaxVal: devVsMax, 
+                                        devMinVal: devVsMin,
+                                        up3: jData.csv_up3,
+                                        ulp: jData.csv_ulp,
                                         notes: dbEntry.notes
                                     });
                                 }
@@ -364,16 +450,25 @@
 
         function renderSaringanMenu1() {
             const dirOpt = document.getElementById('arahDeviasi1').value;
-            const threshold = parseFloat(document.getElementById('filterDeviasi1').value) / 100;
+            const threshold = parseFloat(document.getElementById('filterDeviasi1').value);
             const tbody = document.getElementById('bodyTabel1'); tbody.innerHTML = '';
             let counter = 0;
+            
             arrayHasilMenu1.forEach(row => {
-                let lolos = (dirOpt === "ALL" && Math.abs(row.devVal) >= threshold) || (dirOpt === "PLUS" && row.devVal >= threshold) || (dirOpt === "MINUS" && row.devVal <= -threshold);
-                if (lolos) {
+                // Evaluasi filter UP3 & ULP bawaan dari CSV
+                if (!cekLolosFilterWilayah(row.up3, row.ulp)) return;
+
+                // Gunakan devMaxVal untuk memicu ambang batas anomali filter arah deviasi
+                let selisihNormal = row.devMaxVal - 100; 
+                let lolosArah = (dirOpt === "ALL" && Math.abs(selisihNormal) >= threshold) || 
+                                (dirOpt === "PLUS" && selisihNormal >= threshold) || 
+                                (dirOpt === "MINUS" && selisihNormal <= -threshold);
+                
+                if (lolosArah) {
                     counter++; const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td><span class="badge bg-secondary">${row.idpel}</span></td>
-                        <td><strong>${row.nama}</strong></td>
+                        <td><strong>${row.nama}</strong><br><span class="small-text">${row.up3} - ULP ${row.ulp}</span></td>
                         <td class="text-center-cell"><span class="badge bg-daya">${row.daya.toLocaleString()} VA</span></td>
                         <td class="text-center-cell fw-bold text-primary">${row.phasa}</td>
                         <td class="text-end fw-bold" style="color:#198754;">${row.arusJuni.toFixed(2)} A</td>
@@ -383,7 +478,8 @@
                         <td class="text-end text-muted">${row.minBasis.toFixed(2)} A</td>
                         <td><span class="small-text">${row.tglMinBasis}</span></td>
                         <td class="text-end text-muted fw-bold">${row.avgBasis.toFixed(2)} A</td>
-                        <td class="text-end ${row.devVal>=0?'text-plus':'text-minus'}">${(row.devVal*100).toFixed(1)}%</td>
+                        <td class="text-end fw-bold text-primary">${row.devMaxVal.toFixed(1)}%</td>
+                        <td class="text-end fw-bold text-primary">${row.devMinVal.toFixed(1)}%</td>
                         <td style="font-size:11px;">${row.notes ? row.notes.pesan : '-'} <br><button onclick="bukaFormCatatan('${row.idpel}')" class="btn btn-primary" style="padding:2px 5px; font-size:10px;">📝 Update</button></td>
                         <td class="text-center-cell"><span class="badge" style="background-color:#dc3545; color:white;">ANOMALI</span></td>
                     `;
@@ -399,7 +495,7 @@
             btn.disabled = true; btn.className = "btn btn-warning"; btn.innerHTML = "⏳ Menghitung Tren...";
             setTimeout(function() {
                 muatFileCacheSaja(function(rows) {
-                    const sumG = {}, countG = {}, metaD = {};
+                    const sumG = {}, countG = {}, metaD = {}, mappingWilayahM2 = {};
                     const idpelAktifBulanIni = new Set();
                     rows.forEach(row => {
                         const idpel = row['idpel']; if (!idpel) return;
@@ -407,6 +503,11 @@
                         sumG[idpel] = (sumG[idpel] || 0) + (parseFloat(row['arus_r'])||0) + (parseFloat(row['arus_s'])||0) + (parseFloat(row['arus_t'])||0);
                         countG[idpel] = (countG[idpel] || 0) + 1;
                         if (row['daya']) metaD[idpel] = parseInt(row['daya']);
+                        
+                        // Simpan data wilayah terbaru untuk validasi filter menu 2
+                        if (!mappingWilayahM2[idpel]) {
+                            mappingWilayahM2[idpel] = { up3: row['up3'] || '', ulp: row['ulp'] || '' };
+                        }
                     });
 
                     const uploadYM = listBulanTerpilihUser[listBulanTerpilihUser.length - 1];
@@ -424,7 +525,16 @@
                         } else {
                             historyLengkap[uploadYM] = { avg: 0, daya: dTerakhir };
                         }
-                        arrayHasilMenu2.push({ idpel: idpel, nama: entry.nama, semuaBulanData: historyLengkap, notes: entry.notes });
+                        
+                        const wil = mappingWilayahM2[idpel] || { up3: '', ulp: '' };
+                        arrayHasilMenu2.push({ 
+                            idpel: idpel, 
+                            nama: entry.nama, 
+                            semuaBulanData: historyLengkap, 
+                            up3: wil.up3,
+                            ulp: wil.ulp,
+                            notes: entry.notes 
+                        });
                     }
                     renderSaringanMenu2();
                     btn.disabled = false; btn.className = "btn btn-primary"; btn.innerHTML = "📈 Jalankan Analisis Menu 2";
@@ -455,16 +565,21 @@
             const idxAkhirGlobal = urutanBulanDinamis.indexOf(bulanAkhir);
             const bulanSebelum = idxAkhirGlobal > 0 ? urutanBulanDinamis[idxAkhirGlobal - 1] : null;
             let counter = 0;
+            
             arrayHasilMenu2.forEach(row => {
+                // Filter wilayah dinamis dari file upload
+                if (!cekLolosFilterWilayah(row.up3, row.ulp)) return;
+
                 const dA = row.semuaBulanData[bulanAkhir] || { avg: 0, daya: 0 };
                 const dS = bulanSebelum ? (row.semuaBulanData[bulanSebelum] || { avg: 0, daya: 0 }) : { avg: 0, daya: 0 };
                 let devMoM = dS.avg > 0 ? (dA.avg - dS.avg) / dS.avg : 0;
                 let lolos = filterOpt === "SHOW_ALL" || (filterOpt.startsWith("PLUS") && devMoM >= parseFloat(filterOpt.split('_')[1])/100) || (filterOpt.startsWith("MINUS") && devMoM <= -parseFloat(filterOpt.split('_')[1])/100);
+                
                 if (lolos) {
                     counter++; const tr = document.createElement('tr');
                     const textMoM = dS.avg === 0 ? "-" : (devMoM > 0 ? "+" : "") + (devMoM * 100).toFixed(1) + "%";
                     const canvasId = "canvas_m2_" + row.idpel;
-                    let barisHtml = `<td><span class="badge bg-secondary">${row.idpel}</span></td><td><strong>${row.nama}</strong></td>`;
+                    let barisHtml = `<td><span class="badge bg-secondary">${row.idpel}</span></td><td><strong>${row.nama}</strong><br><span class="small-text">${row.up3} - ULP ${row.ulp}</span></td>`;
                     let points = [];
                     listBulanTerpilihUser.forEach(ym => {
                         let obj = row.semuaBulanData[ym] || { avg: 0, daya: 0 }; points.push(obj.avg);
@@ -508,19 +623,23 @@
             });
         }
 
+        // colIndex disesuaikan mengikuti penambahan struktur kolom baru di Menu 1
         function urutkanKolomTabelMurni(tabelId, colIndex, isNumeric) {
             const tbody = document.getElementById(tabelId).querySelector('tbody');
             const rows = Array.from(tbody.querySelectorAll('tr'));
             arahSortState = !arahSortState;
             rows.sort((a, b) => {
-                let vA = a.getElementsByTagName('td')[colIndex].textContent.trim();
-                let vB = b.getElementsByTagName('td')[colIndex].textContent.trim();
+                let cellA = a.getElementsByTagName('td')[colIndex];
+                let cellB = b.getElementsByTagName('td')[colIndex];
+                if (!cellA || !cellB) return 0;
+                let vA = cellA.textContent.trim();
+                let vB = cellB.textContent.trim();
                 if (isNumeric) {
                     vA = parseFloat(vA.replace(/[^\d.-]/g, '')) || 0;
                     vB = parseFloat(vB.replace(/[^\d.-]/g, '')) || 0;
                     return arahSortState ? vA - vB : vB - vA;
                 }
-                return arahSortState ? vA.localeCompare(vB) : vB.localeCompare(a);
+                return arahSortState ? vA.localeCompare(vB) : vB.localeCompare(vA);
             });
             rows.forEach(r => tbody.appendChild(r));
         }
