@@ -50,7 +50,6 @@
         .label-picker { font-size: 13px; font-weight: bold; color: #495057; display: block; margin-bottom: 4px; }
         .sub-daya-info { font-size: 11px; color: #6f42c1; font-weight: bold; display: block; margin-top: 2px; }
         #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; font-weight: bold; font-size: 18px; color: #1e3a8a; }
-        .inline-filter-container { background: #f8fafc; padding: 10px 15px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 20px; align-items: center; }
     </style>
 </head>
 <body>
@@ -110,32 +109,11 @@
         </div>
 
         <div class="card" id="containerHasil1" style="display:none;">
-            <div class="inline-filter-container">
-                <div>
-                    <label class="fw-bold text-primary" style="font-size:13px;">🏢 Filter UP3:</label>
-                    <select id="filterM1UP3" style="padding:5px 10px; border-radius:4px; font-weight:bold;" onchange="syncULPDropdown('filterM1UP3', 'filterM1ULP'); jalankanFilterTabelMultiKriteria('tabelAudit1', 'filterM1UP3', 'filterM1ULP', 'searchMenu1', 1)">
-                        <option value="ALL">ALL (Semua UP3)</option>
-                        <option value="23SMD">23SMD</option>
-                        <option value="23BPN">23BPN</option>
-                        <option value="23BRU">23BRU</option>
-                        <option value="23BTG">23BTG</option>
-                        <option value="23KTR">23KTR</option>
-                        <option value="23IKN">23IKN</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="fw-bold text-primary" style="font-size:13px;">🏬 Filter ULP:</label>
-                    <select id="filterM1ULP" style="padding:5px 10px; border-radius:4px; font-weight:bold;" onchange="jalankanFilterTabelMultiKriteria('tabelAudit1', 'filterM1UP3', 'filterM1ULP', 'searchMenu1', 1)">
-                        <option value="ALL">ALL (Semua ULP)</option>
-                    </select>
-                </div>
-            </div>
-
             <div class="header-table-container" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h4 class="text-danger" style="margin:0;">Hasil Analisis Rekor Arus Maksimal (Hanya Komparasi Daya Sama)</h4>
                 <div style="display: flex; gap: 15px; align-items: center; width: 60%; justify-content: flex-end;">
                     <button onclick="exportTabelKeExcelMurni('tabelAudit1', 'Hasil_Audit_Anomali_M1')" class="btn btn-success" style="width: auto; padding: 8px 15px; margin: 0; font-size: 13px;">🟢 Export Hasil Audit ke Excel</button>
-                    <input type="text" id="searchMenu1" class="search-box" style="margin:0; width:50%;" onkeyup="jalankanFilterTabelMultiKriteria('tabelAudit1', 'filterM1UP3', 'filterM1ULP', 'searchMenu1', 1)" placeholder="🔍 Cari IDPel / Nama Pelanggan...">
+                    <input type="text" id="searchMenu1" class="search-box" style="margin:0; width:50%;" onkeyup="cariTabelLokal('tabelAudit1', 'searchMenu1')" placeholder="🔍 Cari IDPel / Nama Pelanggan...">
                 </div>
             </div>
             <div class="table-responsive">
@@ -205,32 +183,11 @@
         </div>
 
         <div class="card" id="containerHasil2" style="display:none;">
-            <div class="inline-filter-container">
-                <div>
-                    <label class="fw-bold text-primary" style="font-size:13px;">🏢 Filter UP3:</label>
-                    <select id="filterM2UP3" style="padding:5px 10px; border-radius:4px; font-weight:bold;" onchange="syncULPDropdown('filterM2UP3', 'filterM2ULP'); jalankanFilterTabelMultiKriteria('tabelAudit2', 'filterM2UP3', 'filterM2ULP', 'searchMenu2', 1)">
-                        <option value="ALL">ALL (Semua UP3)</option>
-                        <option value="23SMD">23SMD</option>
-                        <option value="23BPN">23BPN</option>
-                        <option value="23BRU">23BRU</option>
-                        <option value="23BTG">23BTG</option>
-                        <option value="23KTR">23KTR</option>
-                        <option value="23IKN">23IKN</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="fw-bold text-primary" style="font-size:13px;">🏬 Filter ULP:</label>
-                    <select id="filterM2ULP" style="padding:5px 10px; border-radius:4px; font-weight:bold;" onchange="jalankanFilterTabelMultiKriteria('tabelAudit2', 'filterM2UP3', 'filterM2ULP', 'searchMenu2', 1)">
-                        <option value="ALL">ALL (Semua ULP)</option>
-                    </select>
-                </div>
-            </div>
-
             <div class="header-table-container" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h4 class="text-primary" style="margin:0;">Matriks Tren Rata-Rata Arus & Daya</h4>
                 <div style="display: flex; gap: 15px; align-items: center; width: 60%; justify-content: flex-end;">
                     <button onclick="exportTabelKeExcelMurni('tabelAudit2', 'Matriks_Tren_Arus_M2')" class="btn btn-primary" style="width: auto; padding: 8px 15px; margin: 0; font-size: 13px;">🔵 Export Matriks Tren ke Excel</button>
-                    <input type="text" id="searchMenu2" class="search-box" style="margin:0; width: 50%;" onkeyup="jalankanFilterTabelMultiKriteria('tabelAudit2', 'filterM2UP3', 'filterM2ULP', 'searchMenu2', 1)" placeholder="🔍 Cari IDPel / Nama Pelanggan...">
+                    <input type="text" id="searchMenu2" class="search-box" style="margin:0; width: 50%;" onkeyup="cariTabelLokal('tabelAudit2', 'searchMenu2')" placeholder="🔍 Cari IDPel / Nama Pelanggan...">
                 </div>
             </div>
             <div class="table-responsive">
@@ -251,69 +208,6 @@
         let urutanBulanDinamis = []; 
         let listBulanTerpilihUser = [];
         let arahSortState = true;
-
-        const ulpMapping = {
-            "23SMD": ["23100", "23102", "23112", "23120", "23141", "23156", "23157"],
-            "23BPN": ["23200", "23201", "23211", "23220", "23222", "23230"],
-            "23BRU": ["23300", "23350"],
-            "23BTG": ["23400", "23420"],
-            "23KTR": ["23510", "23520", "23530"],
-            "23IKN": ["23600"]
-        };
-
-        function syncULPDropdown(up3Id, ulpId) {
-            const up3Val = document.getElementById(up3Id).value;
-            const ulpSelect = document.getElementById(ulpId);
-            ulpSelect.innerHTML = '<option value="ALL">ALL (Semua ULP)</option>';
-            if (up3Val !== "ALL" && ulpMapping[up3Val]) {
-                ulpMapping[up3Val].forEach(ulp => {
-                    const opt = document.createElement("option");
-                    opt.value = opt.textContent = ulp;
-                    ulpSelect.appendChild(opt);
-                });
-            }
-        }
-
-        // FUNGSI UTAMA YANG FIX & ROBUST: Membaca murni dari Atribut baris (data-up3 dan data-ulp)
-        function jalankanFilterTabelMultiKriteria(tabelId, up3SelectId, ulpSelectId, searchInputId, namaColIndex) {
-            const up3Filter = document.getElementById(up3SelectId).value.toUpperCase();
-            const ulpFilter = document.getElementById(ulpSelectId).value.toUpperCase();
-            const searchKeyword = document.getElementById(searchInputId).value.toLowerCase();
-            
-            const table = document.getElementById(tabelId);
-            if (!table) return;
-            const tbody = table.querySelector("tbody");
-            if (!tbody) return;
-            const trs = tbody.querySelectorAll("tr");
-            
-            for (let i = 0; i < trs.length; i++) {
-                const row = trs[i];
-                const cells = row.querySelectorAll("td");
-                if (cells.length < 2) continue;
-                
-                const idpel = cells[0].textContent.toLowerCase();
-                const namaPelanggan = cells[namaColIndex] ? cells[namaColIndex].textContent.toLowerCase() : "";
-                
-                // Ambil data murni dari tulang baris tabel (sangat aman)
-                const rowUP3 = (row.getAttribute('data-up3') || "").trim();
-                const rowULP = (row.getAttribute('data-ulp') || "").trim();
-                
-                let cocokUP3 = (up3Filter === "ALL") || (rowUP3 === up3Filter);
-                let cocokULP = (ulpFilter === "ALL") || (rowULP === ulpFilter);
-                
-                // Pencarian juga diizinkan mencari berdasarkan kode UP3/ULP
-                let cocokSearch = idpel.includes(searchKeyword) || 
-                                  namaPelanggan.includes(searchKeyword) || 
-                                  rowUP3.toLowerCase().includes(searchKeyword) || 
-                                  rowULP.toLowerCase().includes(searchKeyword);
-                
-                if (cocokUP3 && cocokULP && cocokSearch) {
-                    row.style.display = "";
-                } else {
-                    row.style.display = "none";
-                }
-            }
-        }
 
         fetch('data_historical.json')
             .then(response => response.json())
@@ -425,11 +319,7 @@
                 muatFileCacheSaja(function(rows) {
                     const groupMaxJuni = {};
                     rows.forEach(row => {
-                        // Fitur proteksi pencarian kolom: antisipasi nama kolom melenceng
                         let keys = Object.keys(row);
-                        let up3Key = keys.find(k => k.trim().toLowerCase() === 'up3') || 'up3';
-                        let ulpKey = keys.find(k => k.trim().toLowerCase() === 'ulp') || 'ulp';
-                        
                         const idpel = row['idpel'] || row[keys.find(k => k.trim().toLowerCase() === 'idpel')]; 
                         if (!idpel) return;
                         
@@ -438,9 +328,7 @@
                                 daya_juni: parseInt(row['daya']) || 0, 
                                 max_r: 0, date_r: '-', 
                                 max_s: 0, date_s: '-', 
-                                max_t: 0, date_t: '-',
-                                csv_up3: row[up3Key] || '', 
-                                csv_ulp: row[ulpKey] || '' 
+                                max_t: 0, date_t: '-'
                             };
                         }
                         const tgt = groupMaxJuni[idpel];
@@ -467,6 +355,7 @@
                                 let max_j = jData['max_' + phase.toLowerCase()];
                                 
                                 if (st.max_b > 0 && max_j > 0) {
+                                    // PENTING: Rumus Baru Deviasi vs Max dan Min tetap dipertahankan
                                     let devVsMax = (max_j / st.max_b) * 100;
                                     let devVsMin = st.min_b > 0 ? (max_j / st.min_b) * 100 : 0;
                                     
@@ -478,8 +367,6 @@
                                         avgBasis: st.avg_b, 
                                         devMaxVal: devVsMax, 
                                         devMinVal: devVsMin,
-                                        up3: jData.csv_up3,
-                                        ulp: jData.csv_ulp,
                                         notes: dbEntry.notes
                                     });
                                 }
@@ -506,10 +393,6 @@
                 
                 if (lolosArah) {
                     counter++; const tr = document.createElement('tr');
-                    // Menyematkan data murni ke atribut tr agar tidak bocor atau hilang
-                    tr.setAttribute('data-up3', (row.up3 || "").toString().trim().toUpperCase());
-                    tr.setAttribute('data-ulp', (row.ulp || "").toString().trim().toUpperCase());
-                    
                     tr.innerHTML = `
                         <td><span class="badge bg-secondary">${row.idpel}</span></td>
                         <td><strong>${row.nama}</strong></td>
@@ -532,8 +415,7 @@
             });
             document.getElementById('notifAman1').style.display = counter === 0 ? 'block' : 'none';
             document.getElementById('containerHasil1').style.display = counter === 0 ? 'none' : 'block';
-            
-            jalankanFilterTabelMultiKriteria('tabelAudit1', 'filterM1UP3', 'filterM1ULP', 'searchMenu1', 1);
+            let fV = document.getElementById('searchMenu1').value; if(fV) cariTabelLokal('tabelAudit1', 'searchMenu1');
         }
 
         function eksekusiModul2() {
@@ -541,13 +423,10 @@
             btn.disabled = true; btn.className = "btn btn-warning"; btn.innerHTML = "⏳ Menghitung Tren...";
             setTimeout(function() {
                 muatFileCacheSaja(function(rows) {
-                    const sumG = {}, countG = {}, metaD = {}, mappingWilayahM2 = {};
+                    const sumG = {}, countG = {}, metaD = {};
                     const idpelAktifBulanIni = new Set();
                     rows.forEach(row => {
                         let keys = Object.keys(row);
-                        let up3Key = keys.find(k => k.trim().toLowerCase() === 'up3') || 'up3';
-                        let ulpKey = keys.find(k => k.trim().toLowerCase() === 'ulp') || 'ulp';
-                        
                         const idpel = row['idpel'] || row[keys.find(k => k.trim().toLowerCase() === 'idpel')]; 
                         if (!idpel) return;
                         
@@ -555,9 +434,6 @@
                         sumG[idpel] = (sumG[idpel] || 0) + (parseFloat(row['arus_r'])||0) + (parseFloat(row['arus_s'])||0) + (parseFloat(row['arus_t'])||0);
                         countG[idpel] = (countG[idpel] || 0) + 1;
                         if (row['daya']) metaD[idpel] = parseInt(row['daya']);
-                        if (!mappingWilayahM2[idpel]) {
-                            mappingWilayahM2[idpel] = { up3: row[up3Key] || '', ulp: row[ulpKey] || '' };
-                        }
                     });
 
                     const uploadYM = listBulanTerpilihUser[listBulanTerpilihUser.length - 1];
@@ -576,13 +452,10 @@
                             historyLengkap[uploadYM] = { avg: 0, daya: dTerakhir };
                         }
                         
-                        const wil = mappingWilayahM2[idpel] || { up3: '', ulp: '' };
                         arrayHasilMenu2.push({ 
                             idpel: idpel, 
                             nama: entry.nama, 
                             semuaBulanData: historyLengkap, 
-                            up3: wil.up3,
-                            ulp: wil.ulp,
                             notes: entry.notes 
                         });
                     }
@@ -624,10 +497,6 @@
                 
                 if (lolos) {
                     counter++; const tr = document.createElement('tr');
-                    // Menyematkan data murni ke atribut tr
-                    tr.setAttribute('data-up3', (row.up3 || "").toString().trim().toUpperCase());
-                    tr.setAttribute('data-ulp', (row.ulp || "").toString().trim().toUpperCase());
-                    
                     const textMoM = dS.avg === 0 ? "-" : (devMoM > 0 ? "+" : "") + (devMoM * 100).toFixed(1) + "%";
                     const canvasId = "canvas_m2_" + row.idpel;
                     let barisHtml = `<td><span class="badge bg-secondary">${row.idpel}</span></td><td><strong>${row.nama}</strong></td>`;
@@ -647,8 +516,7 @@
             });
             document.getElementById('notifAman2').style.display = counter === 0 ? 'block' : 'none';
             document.getElementById('containerHasil2').style.display = counter === 0 ? 'none' : 'block';
-            
-            jalankanFilterTabelMultiKriteria('tabelAudit2', 'filterM2UP3', 'filterM2ULP', 'searchMenu2', 1);
+            let fV = document.getElementById('searchMenu2').value; if(fV) cariTabelLokal('tabelAudit2', 'searchMenu2');
         }
 
         function bukaFormCatatan(idpel) {
@@ -696,6 +564,18 @@
             });
             rows.forEach(r => tbody.appendChild(r));
         }
+
+        // KEMBALI KE ASLI: Fungsi pencarian lokal bawaan dashboard yang super responsif
+        function cariTabelLokal(tId, iId) {
+            let f = document.getElementById(iId).value.toLowerCase();
+            let tr = document.getElementById(tId).getElementsByTagName("tr");
+            for (let i = (tId === "tabelAudit1" ? 2 : 1); i < tr.length; i++) {
+                let id = tr[i].cells[0].textContent.toLowerCase(), nm = tr[i].cells[1].textContent.toLowerCase();
+                tr[i].style.display = (id.includes(f) || nm.includes(f)) ? "" : "none";
+            }
+        }
+
+        function prosesSaringanDropdownMenu2Only() { if (arrayHasilMenu2.length > 0) renderSaringanMenu2(); }
 
         function exportTabelKeExcelMurni(tabelId, namaFile) {
             const tabel = document.getElementById(tabelId);
