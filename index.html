@@ -90,6 +90,14 @@
                     <select id="filterUlp_1" class="form-select text-primary" onchange="renderSaringanMenu1()"></select>
                 </div>
                 <div class="col-select">
+                    <label class="label-picker">⚡ Daya (VA):</label>
+                    <select id="filterDaya_1" class="form-select text-primary" onchange="renderSaringanMenu1()">
+                        <option value="ALL">🌐 ALL (Semua Daya)</option>
+                        <option value="KECIL">Daya ≤ 41.500 VA</option>
+                        <option value="BESAR">Daya > 41.500 VA</option>
+                    </select>
+                </div>
+                <div class="col-select">
                     <label class="label-picker">↕️ Arah Deviasi:</label>
                     <select id="arahDeviasi1" class="form-select text-primary" onchange="renderSaringanMenu1()">
                         <option value="ALL">Semua Arah Deviasi</option>
@@ -168,6 +176,14 @@
                 <div style="flex:2; min-width:130px;">
                     <label class="label-picker">📍 ULP:</label>
                     <select id="filterUlp_2" class="form-select text-primary" onchange="prosesSaringanDropdownMenu2Only()"></select>
+                </div>
+                <div style="flex:2; min-width:150px;">
+                    <label class="label-picker">⚡ Daya (VA):</label>
+                    <select id="filterDaya_2" class="form-select text-primary" onchange="prosesSaringanDropdownMenu2Only()">
+                        <option value="ALL">🌐 ALL (Semua Daya)</option>
+                        <option value="KECIL">Daya ≤ 41.500 VA</option>
+                        <option value="BESAR">Daya > 41.500 VA</option>
+                    </select>
                 </div>
                 <div style="flex:2; min-width:140px;">
                     <label class="label-picker">📅 Bulan Awal:</label>
@@ -288,6 +304,20 @@
             const rUlp = bersihkanKodeUnit(row.ulp);
             if (up3Sel !== 'ALL' && rUp3 !== up3Sel) return false;
             if (ulpSel !== 'ALL' && rUlp !== ulpSel) return false;
+            return true;
+        }
+
+        // ==========================================================
+        // FILTER DAYA PELANGGAN (Sumber: File CSV Uploadan)
+        // ==========================================================
+        const BATAS_DAYA_VA = 41500;
+
+        function lolosFilterDaya(dayaVal, menu) {
+            const dayaSel = document.getElementById('filterDaya_' + menu).value;
+            if (dayaSel === 'ALL') return true;
+            const d = parseInt(dayaVal) || 0;
+            if (dayaSel === 'KECIL') return d <= BATAS_DAYA_VA;
+            if (dayaSel === 'BESAR') return d > BATAS_DAYA_VA;
             return true;
         }
 
@@ -478,7 +508,7 @@
                                 (dirOpt === "PLUS" && row.devMaxVal >= threshold) || 
                                 (dirOpt === "MINUS" && row.devMaxVal <= -threshold);
                 
-                if (lolosArah && lolosFilterUnit(row, '1')) {
+                if (lolosArah && lolosFilterUnit(row, '1') && lolosFilterDaya(row.daya, '1')) {
                     counter++; const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td><span class="badge bg-secondary">${row.idpel}</span><span class="small-text">${row.up3} / ${row.ulp}</span></td>
@@ -546,6 +576,7 @@
                             nama: entry.nama, 
                             up3: metaUp3[idpel] || entry.up3 || '-',
                             ulp: metaUlp[idpel] || entry.ulp || '-',
+                            dayaCsv: dTerakhir, // Daya diambil dari file CSV uploadan (fallback histori jika kosong)
                             semuaBulanData: historyLengkap, 
                             notes: entry.notes 
                         });
@@ -586,7 +617,7 @@
                 let devMoM = dS.avg > 0 ? (dA.avg - dS.avg) / dS.avg : 0;
                 let lolos = filterOpt === "SHOW_ALL" || (filterOpt.startsWith("PLUS") && devMoM >= parseFloat(filterOpt.split('_')[1])/100) || (filterOpt.startsWith("MINUS") && devMoM <= -parseFloat(filterOpt.split('_')[1])/100);
                 
-                if (lolos && lolosFilterUnit(row, '2')) {
+                if (lolos && lolosFilterUnit(row, '2') && lolosFilterDaya(row.dayaCsv, '2')) {
                     counter++; const tr = document.createElement('tr');
                     const textMoM = dS.avg === 0 ? "-" : (devMoM > 0 ? "+" : "") + (devMoM * 100).toFixed(1) + "%";
                     const canvasId = "canvas_m2_" + row.idpel;
