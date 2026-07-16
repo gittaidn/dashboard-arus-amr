@@ -82,6 +82,15 @@
         <div class="card" style="background:#f1f3f9;">
             <div class="row">
                 <div class="col-select">
+                    <label class="label-picker">🏢 UP3:</label>
+                    <select id="filterUp3_1" class="form-select text-primary" onchange="gantiUp3('1')"></select>
+                </div>
+                <div class="col-select">
+                    <label class="label-picker">📍 ULP:</label>
+                    <select id="filterUlp_1" class="form-select text-primary" onchange="renderSaringanMenu1()"></select>
+                </div>
+                <div class="col-select">
+                    <label class="label-picker">↕️ Arah Deviasi:</label>
                     <select id="arahDeviasi1" class="form-select text-primary" onchange="renderSaringanMenu1()">
                         <option value="ALL">Semua Arah Deviasi</option>
                         <option value="PLUS">Hanya Lonjakan Arus (+)</option>
@@ -89,6 +98,7 @@
                     </select>
                 </div>
                 <div class="col-select">
+                    <label class="label-picker">🎯 Batas Deviasi:</label>
                     <select id="filterDeviasi1" class="form-select text-danger" onchange="renderSaringanMenu1()">
                         <option value="50">Batas Nilai: ≥ 50%</option>
                         <option value="60">Batas Nilai: ≥ 60%</option>
@@ -97,7 +107,7 @@
                         <option value="90">Batas Nilai: ≥ 90%</option>
                     </select>
                 </div>
-                <div class="col-btn">
+                <div class="col-btn" style="align-self: flex-end;">
                     <button id="btnProses1" onclick="eksekusiModul1()" class="btn btn-success">⚡ Jalankan Audit Menu 1</button>
                 </div>
             </div>
@@ -151,6 +161,14 @@
     <div id="menuTab2" class="tab-content">
         <div class="card" style="background:#f1f3f9;">
             <div class="row">
+                <div style="flex:2; min-width:130px;">
+                    <label class="label-picker">🏢 UP3:</label>
+                    <select id="filterUp3_2" class="form-select text-primary" onchange="gantiUp3('2')"></select>
+                </div>
+                <div style="flex:2; min-width:130px;">
+                    <label class="label-picker">📍 ULP:</label>
+                    <select id="filterUlp_2" class="form-select text-primary" onchange="prosesSaringanDropdownMenu2Only()"></select>
+                </div>
                 <div style="flex:2; min-width:140px;">
                     <label class="label-picker">📅 Bulan Awal:</label>
                     <select id="rentangAwal" class="form-select text-primary" onchange="eksekusiValidasiRentangWaktu()"></select>
@@ -208,6 +226,72 @@
         let urutanBulanDinamis = []; 
         let listBulanTerpilihUser = [];
         let arahSortState = true;
+
+        // ==========================================================
+        // KONFIGURASI WILAYAH: UP3 & ULP
+        // ==========================================================
+        const MAP_UP3_ULP = {
+            '23SMD': ['23100', '23102', '23112', '23120', '23141', '23156', '23157'],
+            '23BPN': ['23200', '23201', '23211', '23220', '23222', '23230'],
+            '23BRU': ['23300', '23350'],
+            '23BTG': ['23400', '23420'],
+            '23KTR': ['23510', '23520', '23530'],
+            '23IKN': ['23600']
+        };
+
+        function inisialisasiFilterUnit() {
+            ['1', '2'].forEach(menu => {
+                const selUp3 = document.getElementById('filterUp3_' + menu);
+                selUp3.innerHTML = '<option value="ALL">🌐 ALL (Semua UP3)</option>';
+                Object.keys(MAP_UP3_ULP).forEach(up3 => {
+                    const opt = document.createElement('option');
+                    opt.value = up3; opt.innerText = up3;
+                    selUp3.appendChild(opt);
+                });
+                isiDropdownUlp(menu, 'ALL');
+            });
+        }
+
+        function isiDropdownUlp(menu, up3Terpilih) {
+            const selUlp = document.getElementById('filterUlp_' + menu);
+            selUlp.innerHTML = '<option value="ALL">🌐 ALL (Semua ULP)</option>';
+            let daftarUlp = [];
+            if (up3Terpilih === 'ALL') {
+                Object.values(MAP_UP3_ULP).forEach(arr => daftarUlp.push(...arr));
+            } else {
+                daftarUlp = MAP_UP3_ULP[up3Terpilih] || [];
+            }
+            daftarUlp.forEach(ulp => {
+                const opt = document.createElement('option');
+                opt.value = ulp; opt.innerText = ulp;
+                selUlp.appendChild(opt);
+            });
+        }
+
+        function gantiUp3(menu) {
+            const up3Terpilih = document.getElementById('filterUp3_' + menu).value;
+            isiDropdownUlp(menu, up3Terpilih); // Reset ULP ke ALL sesuai UP3 terpilih
+            if (menu === '1') renderSaringanMenu1();
+            else prosesSaringanDropdownMenu2Only();
+        }
+
+        function bersihkanKodeUnit(nilai) {
+            if (nilai === null || nilai === undefined) return '-';
+            return String(nilai).replace(/\.0$/, '').trim().toUpperCase();
+        }
+
+        function lolosFilterUnit(row, menu) {
+            const up3Sel = document.getElementById('filterUp3_' + menu).value;
+            const ulpSel = document.getElementById('filterUlp_' + menu).value;
+            if (up3Sel === 'ALL' && ulpSel === 'ALL') return true;
+            const rUp3 = bersihkanKodeUnit(row.up3);
+            const rUlp = bersihkanKodeUnit(row.ulp);
+            if (up3Sel !== 'ALL' && rUp3 !== up3Sel) return false;
+            if (ulpSel !== 'ALL' && rUlp !== ulpSel) return false;
+            return true;
+        }
+
+        inisialisasiFilterUnit();
 
         fetch('data_historical.json')
             .then(response => response.json())
@@ -326,6 +410,8 @@
                         if (!groupMaxJuni[idpel]) {
                             groupMaxJuni[idpel] = { 
                                 daya_juni: parseInt(row['daya']) || 0, 
+                                up3: bersihkanKodeUnit(row['up3']),
+                                ulp: bersihkanKodeUnit(row['ulp']),
                                 max_r: 0, date_r: '-', 
                                 max_s: 0, date_s: '-', 
                                 max_t: 0, date_t: '-'
@@ -366,6 +452,8 @@
                                         avgBasis: st.avg_b, 
                                         devMaxVal: devVsMax, 
                                         devMinVal: devVsMin,
+                                        up3: (jData.up3 && jData.up3 !== '-') ? jData.up3 : (dbEntry.up3 || '-'),
+                                        ulp: (jData.ulp && jData.ulp !== '-') ? jData.ulp : (dbEntry.ulp || '-'),
                                         notes: dbEntry.notes
                                     });
                                 }
@@ -390,10 +478,10 @@
                                 (dirOpt === "PLUS" && row.devMaxVal >= threshold) || 
                                 (dirOpt === "MINUS" && row.devMaxVal <= -threshold);
                 
-                if (lolosArah) {
+                if (lolosArah && lolosFilterUnit(row, '1')) {
                     counter++; const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td><span class="badge bg-secondary">${row.idpel}</span></td>
+                        <td><span class="badge bg-secondary">${row.idpel}</span><span class="small-text">${row.up3} / ${row.ulp}</span></td>
                         <td><strong>${row.nama}</strong></td>
                         <td class="text-center-cell"><span class="badge bg-daya">${row.daya.toLocaleString()} VA</span></td>
                         <td class="text-center-cell fw-bold text-primary">${row.phasa}</td>
@@ -422,7 +510,7 @@
             btn.disabled = true; btn.className = "btn btn-warning"; btn.innerHTML = "⏳ Menghitung Tren...";
             setTimeout(function() {
                 muatFileCacheSaja(function(rows) {
-                    const sumG = {}, countG = {}, metaD = {};
+                    const sumG = {}, countG = {}, metaD = {}, metaUp3 = {}, metaUlp = {};
                     const idpelAktifBulanIni = new Set();
                     rows.forEach(row => {
                         let keys = Object.keys(row);
@@ -433,6 +521,8 @@
                         sumG[idpel] = (sumG[idpel] || 0) + (parseFloat(row['arus_r'])||0) + (parseFloat(row['arus_s'])||0) + (parseFloat(row['arus_t'])||0);
                         countG[idpel] = (countG[idpel] || 0) + 1;
                         if (row['daya']) metaD[idpel] = parseInt(row['daya']);
+                        if (row['up3']) metaUp3[idpel] = bersihkanKodeUnit(row['up3']);
+                        if (row['ulp']) metaUlp[idpel] = bersihkanKodeUnit(row['ulp']);
                     });
 
                     const uploadYM = listBulanTerpilihUser[listBulanTerpilihUser.length - 1];
@@ -454,6 +544,8 @@
                         arrayHasilMenu2.push({ 
                             idpel: idpel, 
                             nama: entry.nama, 
+                            up3: metaUp3[idpel] || entry.up3 || '-',
+                            ulp: metaUlp[idpel] || entry.ulp || '-',
                             semuaBulanData: historyLengkap, 
                             notes: entry.notes 
                         });
@@ -494,11 +586,11 @@
                 let devMoM = dS.avg > 0 ? (dA.avg - dS.avg) / dS.avg : 0;
                 let lolos = filterOpt === "SHOW_ALL" || (filterOpt.startsWith("PLUS") && devMoM >= parseFloat(filterOpt.split('_')[1])/100) || (filterOpt.startsWith("MINUS") && devMoM <= -parseFloat(filterOpt.split('_')[1])/100);
                 
-                if (lolos) {
+                if (lolos && lolosFilterUnit(row, '2')) {
                     counter++; const tr = document.createElement('tr');
                     const textMoM = dS.avg === 0 ? "-" : (devMoM > 0 ? "+" : "") + (devMoM * 100).toFixed(1) + "%";
                     const canvasId = "canvas_m2_" + row.idpel;
-                    let barisHtml = `<td><span class="badge bg-secondary">${row.idpel}</span></td><td><strong>${row.nama}</strong></td>`;
+                    let barisHtml = `<td><span class="badge bg-secondary">${row.idpel}</span><span class="small-text">${row.up3} / ${row.ulp}</span></td><td><strong>${row.nama}</strong></td>`;
                     let points = [];
                     listBulanTerpilihUser.forEach(ym => {
                         let obj = row.semuaBulanData[ym] || { avg: 0, daya: 0 }; points.push(obj.avg);
