@@ -58,7 +58,7 @@
 
     <div class="card text-center">
         <h2 class="fw-bold text-primary" style="margin:0 0 5px 0;">📊 Portal Audit & Analisis Eksplorasi Tren Arus AMR</h2>
-        <p style="color:#6c757d; margin:0;">Platform Sistem Pengawasan Skala Enterprise - Versi 9.0 Stable Database</p>
+        <p style="color:#6c757d; margin:0;">Platform Sistem Pengawasan Skala Enterprise - Versi 10.0 Stable Database</p>
     </div>
 
     <div id="notifErrorSistem" class="alert-error">⚠️ Peringatan: Rentang waktu terbalik atau durasi melebihi batas maksimal 12 bulan!</div>
@@ -209,6 +209,9 @@
                     <button id="btnProses2" onclick="eksekusiModul2()" class="btn btn-primary">📈 Jalankan Analisis Menu 2</button>
                 </div>
             </div>
+            <div style="margin-top:10px; font-size:12px; color:#6c757d;">
+                ℹ️ Database dashboard menyimpan maksimal <strong>24 bulan terakhir</strong> dengan tampilan rentang maksimal <strong>12 bulan</strong>. Untuk melihat data yang lebih lama, silakan hubungi admin atau buka arsip Google Sheets secara manual.
+            </div>
         </div>
 
         <div id="notifAman2" class="alert-success card">
@@ -243,6 +246,7 @@
         let listBulanTerpilihUser = [];
         let arahSortState = true;
         let daftarBulanDatabase = []; // Diisi otomatis dari isi data_historical.json
+        let uploadYMDetected = null;  // Bulan asli file CSV uploadan (dari kolom tanggal)
 
         // ==========================================================
         // KONFIGURASI WILAYAH: UP3 & ULP
@@ -330,6 +334,7 @@
         // ==========================================================
         function resetCacheFileBaru() {
             rowsJuniCache = null;
+            uploadYMDetected = null;
             arrayHasilMenu1 = [];
             arrayHasilMenu2 = [];
             document.getElementById('containerHasil1').style.display = 'none';
@@ -385,16 +390,45 @@
         fetch('data_historical.json')
             .then(response => response.json())
             .then(data => {
-                trendMaster = data.trend_master;
-                statsMaster = data.stats_master;
-                // Deteksi otomatis semua bulan yang tersedia di database
-                const setBulan = new Set();
-                for (let idpel in trendMaster) {
-                    for (let ym in trendMaster[idpel].data_bulanan) setBulan.add(ym);
+                // ==========================================================
+                // ADAPTER FORMAT v10 (struktur kompak) -> struktur internal.
+                // Format lama (v8/v9) tetap didukung sebagai fallback.
+                // ==========================================================
+                if (data.versi && data.versi >= 10) {
+                    daftarBulanDatabase = data.bulan;
+                    trendMaster = {}; statsMaster = {};
+                    for (let id in data.trend_master) {
+                        const e = data.trend_master[id];
+                        const db = {};
+                        data.bulan.forEach((ym, i) => {
+                            const avg = e.a[i];
+                            if (avg !== null && avg !== undefined) {
+                                db[ym] = { avg: avg, daya: (e.dx && e.dx[ym] !== undefined) ? e.dx[ym] : e.d };
+                            }
+                        });
+                        trendMaster[id] = { nama: e.n, up3: e.u, ulp: e.l, notes: e.c || null, data_bulanan: db };
+                    }
+                    for (let id in data.stats_master) {
+                        const e = data.stats_master[id];
+                        statsMaster[id] = { nama: e.n, up3: e.u, ulp: e.l, notes: e.c || null, daya_stats: e.s };
+                    }
+                } else {
+                    trendMaster = data.trend_master;
+                    statsMaster = data.stats_master;
+                    const setBulan = new Set();
+                    for (let idpel in trendMaster) {
+                        for (let ym in trendMaster[idpel].data_bulanan) setBulan.add(ym);
+                    }
+                    daftarBulanDatabase = Array.from(setBulan).sort();
                 }
-                daftarBulanDatabase = Array.from(setBulan).sort();
                 document.getElementById('loadingOverlay').style.display = 'none';
                 inisialisasiDropdownRentangWaktu();
+                // Default rentang = 12 bulan terakhir agar tetap valid
+                // walau database menyimpan sampai 24 bulan
+                const nB = urutanBulanDinamis.length;
+                document.getElementById('rentangAwal').value = urutanBulanDinamis[Math.max(0, nB - 12)];
+                document.getElementById('rentangAkhir').value = urutanBulanDinamis[nB - 1];
+                eksekusiValidasiRentangWaktu(true);
                 muatCatatanLive();
             })
             .catch(error => {
@@ -434,19 +468,20 @@
             return namaBulan[parseInt(m[1])] + " " + m[0];
         }
 
-        function eksekusiValidasiRentangWaktu() {
+        function eksekusiValidasiRentangWaktu(skipRender = false) {
             const awal = document.getElementById('rentangAwal').value;
             const akhir = document.getElementById('rentangAkhir').value;
             const idxAwal = urutanBulanDinamis.indexOf(awal);
             const idxAkhir = urutanBulanDinamis.indexOf(akhir);
-            if (idxAwal > idxAkhir || (idxAkhir - idxAwal + 1) > 12) {
+            if (idxAwal < 0 || idxAkhir < 0 || idxAwal > idxAkhir || (idxAkhir - idxAwal + 1) > 12) {
                 document.getElementById('notifErrorSistem').style.display = 'block';
                 document.getElementById('containerHasil2').style.display = 'none';
-                return;
+                return false;
             }
             document.getElementById('notifErrorSistem').style.display = 'none';
             listBulanTerpilihUser = urutanBulanDinamis.slice(idxAwal, idxAkhir + 1);
-            if (arrayHasilMenu2.length > 0) { renderSaringanMenu2(); }
+            if (!skipRender && arrayHasilMenu2.length > 0) { renderSaringanMenu2(); }
+            return true;
         }
 
         function parseCSVBawaan(text) {
@@ -479,14 +514,40 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 rowsJuniCache = parseCSVBawaan(e.target.result);
-                let detectedYM = "2026-07";
-                for (let k = 0; k < Math.min(rowsJuniCache.length, 10); k++) {
-                    if (rowsJuniCache[k]['tanggal'] && rowsJuniCache[k]['tanggal'].includes('-')) {
-                        detectedYM = rowsJuniCache[k]['tanggal'].slice(0, 7);
+                // ==========================================================
+                // DETEKSI BULAN FILE CSV DARI KOLOM 'tanggal' (format YYYY-MM-..)
+                // Jika tidak terbaca: BERHENTI dengan peringatan jelas.
+                // Tidak ada lagi asumsi diam-diam ke bulan tertentu.
+                // ==========================================================
+                let detectedYM = null;
+                for (let k = 0; k < Math.min(rowsJuniCache.length, 50); k++) {
+                    const tgl = rowsJuniCache[k]['tanggal'];
+                    if (tgl && /^\d{4}-(0[1-9]|1[0-2])/.test(tgl.trim())) {
+                        detectedYM = tgl.trim().slice(0, 7);
                         break;
                     }
                 }
+                if (!detectedYM) {
+                    alert("❌ Kolom 'tanggal' pada file CSV tidak ditemukan atau formatnya tidak dikenali (wajib YYYY-MM-DD ...).\n\nPeriksa kembali file CSV Anda. Proses dibatalkan.");
+                    rowsJuniCache = null;
+                    uploadYMDetected = null;
+                    document.getElementById('fileJuni').value = '';
+                    callback(null);
+                    return;
+                }
+                uploadYMDetected = detectedYM;
                 inisialisasiDropdownRentangWaktu(detectedYM);
+                // Bulan Akhir otomatis melompat ke bulan file CSV,
+                // Bulan Awal dikoreksi agar rentang tetap valid (maks 12 bln)
+                const selAwal = document.getElementById('rentangAwal');
+                const selAkhir = document.getElementById('rentangAkhir');
+                selAkhir.value = detectedYM;
+                const idxAkhir = urutanBulanDinamis.indexOf(detectedYM);
+                const idxAwal = urutanBulanDinamis.indexOf(selAwal.value);
+                if (idxAwal < 0 || idxAwal > idxAkhir || (idxAkhir - idxAwal + 1) > 12) {
+                    selAwal.value = urutanBulanDinamis[Math.max(0, idxAkhir - 11)];
+                }
+                eksekusiValidasiRentangWaktu(true);
                 callback(rowsJuniCache);
             };
             reader.readAsText(fileInput.files[0]);
@@ -497,6 +558,10 @@
             btn.disabled = true; btn.className = "btn btn-warning"; btn.innerHTML = "⏳ Menghitung Menu 1...";
             setTimeout(function() {
                 muatFileCacheSaja(function(rows) {
+                    if (!rows) {
+                        btn.disabled = false; btn.className = "btn btn-success"; btn.innerHTML = "⚡ Jalankan Audit Menu 1";
+                        return;
+                    }
                     const groupMaxJuni = {};
                     rows.forEach(row => {
                         let keys = Object.keys(row);
@@ -540,14 +605,16 @@
                             let dayaBerubah = false;
                             if (!dbEntry.daya_stats[dayaStr]) {
                                 dayaBerubah = true;
-                                // Prioritas: daya bulan terakhir di trend_master; jika tidak
-                                // ada di daya_stats, pakai daya histori paling besar terakhir
+                                // Cari daya TERBARU: telusuri bulan histori dari yang
+                                // paling akhir, ambil daya pertama yang ada di statistik
                                 let kandidat = null;
                                 const tEntry = trendMaster[idpel];
                                 if (tEntry) {
-                                    const ymTerakhir = Object.keys(tEntry.data_bulanan).sort().pop();
-                                    const dTrend = String(tEntry.data_bulanan[ymTerakhir].daya);
-                                    if (dbEntry.daya_stats[dTrend]) kandidat = dTrend;
+                                    const ymsDesc = Object.keys(tEntry.data_bulanan).sort().reverse();
+                                    for (const ym of ymsDesc) {
+                                        const dTrend = String(tEntry.data_bulanan[ym].daya);
+                                        if (dbEntry.daya_stats[dTrend]) { kandidat = dTrend; break; }
+                                    }
                                 }
                                 dayaPembanding = kandidat || semuaDayaHistoris[semuaDayaHistoris.length - 1];
                             }
@@ -637,6 +704,15 @@
             btn.disabled = true; btn.className = "btn btn-warning"; btn.innerHTML = "⏳ Menghitung Tren...";
             setTimeout(function() {
                 muatFileCacheSaja(function(rows) {
+                    if (!rows) {
+                        btn.disabled = false; btn.className = "btn btn-primary"; btn.innerHTML = "📈 Jalankan Analisis Menu 2";
+                        return;
+                    }
+                    // Pastikan rentang bulan valid & terdaftar sebelum memproses
+                    if (!eksekusiValidasiRentangWaktu(true)) {
+                        btn.disabled = false; btn.className = "btn btn-primary"; btn.innerHTML = "📈 Jalankan Analisis Menu 2";
+                        return;
+                    }
                     const sumG = {}, countG = {}, metaD = {}, metaUp3 = {}, metaUlp = {};
                     const idpelAktifBulanIni = new Set();
                     rows.forEach(row => {
@@ -652,7 +728,13 @@
                         if (row['ulp']) metaUlp[idpel] = bersihkanKodeUnit(row['ulp']);
                     });
 
-                    const uploadYM = listBulanTerpilihUser[listBulanTerpilihUser.length - 1];
+                    // ==========================================================
+                    // PENTING: Data CSV ditempatkan di BULAN ASLINYA (hasil
+                    // deteksi kolom tanggal), BUKAN di slot Bulan Akhir pilihan.
+                    // Jadi memilih rentang historis (mis. Jan-Mei) menghasilkan
+                    // perbandingan murni antar database, CSV tidak ikut campur.
+                    // ==========================================================
+                    const uploadYM = uploadYMDetected;
                     arrayHasilMenu2 = [];
                     for (let idpel in trendMaster) {
                         if (!idpelAktifBulanIni.has(idpel.toString())) continue;
