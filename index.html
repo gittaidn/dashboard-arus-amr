@@ -57,7 +57,7 @@
     <div id="loadingOverlay">⏳ Sedang mengunduh database AMR historis terkompresi dari GitHub... Mohon tunggu sebentar...</div>
 
     <div class="card text-center">
-        <h2 class="fw-bold text-primary" style="margin:0 0 5px 0;">📊 Portal Audit & Analisis Eksplorasi Tren Arus AMR</h2>
+        <h2 class="fw-bold text-primary" style="margin:0 0 5px 0;">📊 Portal Audit & Analisis Pelanggan AMR – Non AMR 3 Fasa</h2>
         <p style="color:#6c757d; margin:0;">Platform Sistem Pengawasan Skala Enterprise - Versi 10.0 Stable Database</p>
     </div>
 
@@ -80,6 +80,7 @@
     <div class="tabs-container">
         <button id="btnTab1" class="tab-button active" onclick="switchMenuTab('menuTab1')">🔎 MENU 1: Audit Anomali Harian (Max Puncak)</button>
         <button id="btnTab2" class="tab-button" onclick="switchMenuTab('menuTab2')">📈 MENU 2: Analisis Dinamis Tren Rata-Rata Bulanan</button>
+        <button id="btnTab3" class="tab-button" onclick="switchMenuTab('menuTab3')">📊 MENU 3: Analisis Jam Nyala (Non AMR 3 Fasa)</button>
     </div>
 
     <!-- MENU TAB 1 -->
@@ -241,6 +242,74 @@
         </div>
     </div>
 
+    <!-- MENU TAB 3: JAM NYALA -->
+    <div id="menuTab3" class="tab-content">
+        <div class="card" style="background:#f1f3f9;">
+            <div class="row">
+                <div style="flex:2; min-width:130px;">
+                    <label class="label-picker">🏢 UP3:</label>
+                    <select id="filterUp3_3" class="form-select text-primary" onchange="gantiUp3('3')"></select>
+                </div>
+                <div style="flex:2; min-width:130px;">
+                    <label class="label-picker">📍 ULP:</label>
+                    <select id="filterUlp_3" class="form-select text-primary" onchange="renderSaringanMenu3()"></select>
+                </div>
+                <div style="flex:2; min-width:150px;">
+                    <label class="label-picker">⚡ Daya:</label>
+                    <select id="filterDaya_3" class="form-select text-primary" onchange="renderSaringanMenu3()">
+                        <option value="ALL">🌐 ALL (Semua Daya)</option>
+                        <option value="D1">Daya ≤ 41.500 VA</option>
+                        <option value="D2">53.000 – 197.000 VA</option>
+                        <option value="D3">Daya > 197.000 VA</option>
+                    </select>
+                </div>
+                <div style="flex:2; min-width:140px;">
+                    <label class="label-picker">📅 Bulan Awal:</label>
+                    <select id="rentangAwalM3" class="form-select text-primary" onchange="validasiRentangM3()"></select>
+                </div>
+                <div style="flex:2; min-width:140px;">
+                    <label class="label-picker">📅 Bulan Akhir:</label>
+                    <select id="rentangAkhirM3" class="form-select text-primary" onchange="validasiRentangM3()"></select>
+                </div>
+                <div style="flex:3; min-width:180px;">
+                    <label class="label-picker">🔀 Deviasi Dinamis:</label>
+                    <select id="devDinamisM3" class="form-select text-danger" onchange="renderSaringanMenu3()">
+                        <option value="YOY">YoY (Bulan Sama Thn Lalu)</option>
+                        <option value="VS_AVG">vs Avg Tahun Sebelumnya</option>
+                        <option value="VS_MAX">vs Max Tahun Sebelumnya</option>
+                        <option value="VS_MIN">vs Min Tahun Sebelumnya</option>
+                    </select>
+                </div>
+                <div class="col-btn" style="align-self: flex-end;">
+                    <button id="btnProses3" onclick="eksekusiModul3()" class="btn" style="background-color:#6f42c1;">📊 Jalankan Analisis Menu 3</button>
+                </div>
+            </div>
+            <div style="margin-top:10px; font-size:12px; color:#6c757d;">
+                ℹ️ Menu 3 bersifat <strong>korektif</strong> — data diupdate bulanan setelah rekening terbit. Timeseries dibatasi <strong>maks 12 bulan</strong>, data terlama Januari 2024. Ringkasan tahunan mencakup <strong>5 tahun penuh terakhir</strong>.
+            </div>
+        </div>
+
+        <div id="notifErrorM3" class="alert-error" style="display:none;">⚠️ Rentang waktu terbalik atau melebihi 12 bulan!</div>
+        <div id="notifAmanM3" class="alert-success card"><h3 style="margin:0 0 5px 0;">ℹ️ Informasi</h3><p style="margin:0;">Klik tombol ungu untuk memproses data Jam Nyala.</p></div>
+
+        <div class="card" id="containerHasilM3" style="display:none;">
+            <div class="header-table-container" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h4 style="color:#6f42c1; margin:0;">Matriks Analisis Jam Nyala Pelanggan 3 Fasa</h4>
+                <div style="display:flex; gap:15px; align-items:center; width:60%; justify-content:flex-end;">
+                    <button onclick="exportTabelKeExcelMurni('tabelAuditM3', 'Analisis_JamNyala_M3')" class="btn" style="background-color:#6f42c1; width:auto; padding:8px 15px; font-size:13px;">🟣 Export ke Excel</button>
+                    <input type="text" id="searchMenu3" class="search-box" style="margin:0; width:50%; border-color:#6f42c1;" onkeyup="cariTabelLokal('tabelAuditM3', 'searchMenu3')" placeholder="🔍 Cari IDPel / Nama Pelanggan...">
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table id="tabelAuditM3">
+                    <thead id="headTabelM3"></thead>
+                    <tbody id="bodyTabelM3"></tbody>
+                </table>
+            </div>
+            <p id="counterHasilM3" style="margin-top:10px; font-weight:bold; color:#6f42c1;"></p>
+        </div>
+    </div>
+
     <script>
         let trendMaster = {};
         let statsMaster = {};
@@ -266,8 +335,9 @@
         };
 
         function inisialisasiFilterUnit() {
-            ['1', '2'].forEach(menu => {
+            ['1', '2', '3'].forEach(menu => {
                 const selUp3 = document.getElementById('filterUp3_' + menu);
+                if (!selUp3) return;
                 selUp3.innerHTML = '<option value="ALL">🌐 ALL (Semua UP3)</option>';
                 Object.keys(MAP_UP3_ULP).forEach(up3 => {
                     const opt = document.createElement('option');
@@ -446,6 +516,7 @@
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             if(tabId==='menuTab1') document.getElementById('btnTab1').classList.add('active');
             if(tabId==='menuTab2') document.getElementById('btnTab2').classList.add('active');
+            if(tabId==='menuTab3') { document.getElementById('btnTab3').classList.add('active'); muatJamNyalaLazy(); }
             document.getElementById(tabId).classList.add('active');
         }
 
@@ -903,6 +974,291 @@
             linkDownload.click();
             document.body.removeChild(linkDownload);
         }
+        // ==========================================================
+        // MENU 3: ANALISIS JAM NYALA (NON AMR 3 FASA)
+        // ==========================================================
+        let jnData = null;       // JSON jam nyala (lazy loaded)
+        let jnLoaded = false;
+        let arrayHasilM3 = [];
+
+        function muatJamNyalaLazy() {
+            if (jnLoaded) return;
+            jnLoaded = true;
+            fetch('data_jamnyala.json')
+                .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                .then(data => {
+                    jnData = data;
+                    inisialisasiDropdownM3();
+                    console.log('✅ Data Jam Nyala dimuat: ' + Object.keys(data.pelanggan).length + ' pelanggan.');
+                })
+                .catch(err => {
+                    console.warn('⚠️ Gagal memuat data_jamnyala.json:', err);
+                    document.getElementById('notifAmanM3').innerHTML = '<h3 style="margin:0 0 5px 0;">⚠️ Data Belum Tersedia</h3><p style="margin:0;">File data_jamnyala.json belum ditemukan. Jalankan hitung_jn.py terlebih dahulu.</p>';
+                    document.getElementById('notifAmanM3').style.display = 'block';
+                    document.getElementById('notifAmanM3').style.background = '#fff3cd';
+                    document.getElementById('notifAmanM3').style.color = '#856404';
+                });
+        }
+
+        function inisialisasiDropdownM3() {
+            if (!jnData) return;
+            const selA = document.getElementById('rentangAwalM3');
+            const selB = document.getElementById('rentangAkhirM3');
+            selA.innerHTML = ''; selB.innerHTML = '';
+            jnData.bulan_ts.forEach(ym => {
+                let o1 = document.createElement('option'); o1.value = ym; o1.innerText = konversiLabelBulan(ym);
+                selA.appendChild(o1);
+                let o2 = document.createElement('option'); o2.value = ym; o2.innerText = konversiLabelBulan(ym);
+                selB.appendChild(o2);
+            });
+            // Default: 12 bulan terakhir
+            const n = jnData.bulan_ts.length;
+            selA.value = jnData.bulan_ts[Math.max(0, n - 12)];
+            selB.value = jnData.bulan_ts[n - 1];
+            validasiRentangM3(true);
+        }
+
+        let bulanTerpilihM3 = [];
+        function validasiRentangM3(skipRender) {
+            if (!jnData) return false;
+            const a = document.getElementById('rentangAwalM3').value;
+            const b = document.getElementById('rentangAkhirM3').value;
+            const iA = jnData.bulan_ts.indexOf(a), iB = jnData.bulan_ts.indexOf(b);
+            if (iA < 0 || iB < 0 || iA > iB || (iB - iA + 1) > 12) {
+                document.getElementById('notifErrorM3').style.display = 'block';
+                return false;
+            }
+            document.getElementById('notifErrorM3').style.display = 'none';
+            bulanTerpilihM3 = jnData.bulan_ts.slice(iA, iB + 1);
+            if (!skipRender && arrayHasilM3.length > 0) renderSaringanMenu3();
+            return true;
+        }
+
+        function lolosFilterDayaM3(daya) {
+            const sel = document.getElementById('filterDaya_3').value;
+            if (sel === 'ALL') return true;
+            const d = parseInt(daya) || 0;
+            if (sel === 'D1') return d <= 41500;
+            if (sel === 'D2') return d >= 53000 && d <= 197000;
+            if (sel === 'D3') return d > 197000;
+            return true;
+        }
+
+        function eksekusiModul3() {
+            if (!jnData) { alert('Data Jam Nyala belum dimuat.'); return; }
+            if (!validasiRentangM3(true)) return;
+            const btn = document.getElementById('btnProses3');
+            btn.disabled = true; btn.className = 'btn btn-warning'; btn.innerHTML = '⏳ Memproses...';
+
+            setTimeout(function() {
+                arrayHasilM3 = [];
+                const bulanAkhir = bulanTerpilihM3[bulanTerpilihM3.length - 1];
+                const thnSblm = jnData.tahun_sblm;
+
+                for (let idpel in jnData.pelanggan) {
+                    const p = jnData.pelanggan[idpel];
+                    const offset = p.o || 0;
+
+                    // Rebuild full timeseries (with nulls for pre-valid months)
+                    const fullTs = {};
+                    for (let i = 0; i < jnData.bulan_ts.length; i++) {
+                        if (i < offset) fullTs[jnData.bulan_ts[i]] = null;
+                        else fullTs[jnData.bulan_ts[i]] = (i - offset < p.v.length) ? p.v[i - offset] : null;
+                    }
+
+                    // Nilai bulan akhir
+                    const valAkhir = fullTs[bulanAkhir];
+                    if (valAkhir === null || valAkhir === undefined) continue; // belum ada data
+
+                    // Nilai bulan sebelumnya (MoM)
+                    const idxAkhir = jnData.bulan_ts.indexOf(bulanAkhir);
+                    const bulanSblm = idxAkhir > 0 ? jnData.bulan_ts[idxAkhir - 1] : null;
+                    const valSblm = bulanSblm ? fullTs[bulanSblm] : null;
+                    const devMoM = (valSblm && valSblm > 0) ? ((valAkhir - valSblm) / valSblm) : null;
+
+                    // Timeseries untuk grafik
+                    const tsGrafik = bulanTerpilihM3.map(ym => fullTs[ym]);
+
+                    arrayHasilM3.push({
+                        idpel, nama: p.n, up3: p.u, ulp: p.l, tarif: p.t, daya: p.d,
+                        ringkasan: p.r, tsGrafik, valAkhir, devMoM, fullTs,
+                        thnSblm
+                    });
+                }
+
+                renderSaringanMenu3();
+                btn.disabled = false; btn.className = 'btn'; btn.style.backgroundColor = '#6f42c1'; btn.innerHTML = '📊 Jalankan Analisis Menu 3';
+            }, 50);
+        }
+
+        function hitungDevDinamis(row) {
+            const mode = document.getElementById('devDinamisM3').value;
+            const bulanAkhir = bulanTerpilihM3[bulanTerpilihM3.length - 1];
+            const val = row.valAkhir;
+            const ring = row.ringkasan[String(row.thnSblm)];
+
+            if (mode === 'YOY') {
+                // Bulan yang sama tahun lalu
+                const parts = bulanAkhir.split('-');
+                const ymLalu = (parseInt(parts[0]) - 1) + '-' + parts[1];
+                const valLalu = row.fullTs[ymLalu];
+                if (valLalu !== null && valLalu !== undefined && valLalu > 0) return (val - valLalu) / valLalu;
+                return null;
+            }
+            if (!ring) return null;
+            const [avg, mx, mn] = ring;
+            if (mode === 'VS_AVG' && avg > 0) return (val - avg) / avg;
+            if (mode === 'VS_MAX' && mx > 0) return (val - mx) / mx;
+            if (mode === 'VS_MIN' && mn > 0) return (val - mn) / mn;
+            return null;
+        }
+
+        function labelDevDinamis() {
+            const m = document.getElementById('devDinamisM3').value;
+            if (m === 'YOY') return 'Deviasi YoY';
+            if (m === 'VS_AVG') return 'vs Avg ' + (jnData ? jnData.tahun_sblm : '');
+            if (m === 'VS_MAX') return 'vs Max ' + (jnData ? jnData.tahun_sblm : '');
+            if (m === 'VS_MIN') return 'vs Min ' + (jnData ? jnData.tahun_sblm : '');
+            return 'Deviasi';
+        }
+
+        function renderSaringanMenu3() {
+            if (!jnData || arrayHasilM3.length === 0) return;
+            const thead = document.getElementById('headTabelM3');
+            const tbody = document.getElementById('bodyTabelM3');
+
+            // Build header
+            let hdr1 = '<tr><th rowspan="2">UP3</th><th rowspan="2">ULP</th><th rowspan="2" class="sortable" onclick="urutkanKolomTabelMurni(\'tabelAuditM3\',2,true)">ID Pel</th><th rowspan="2" class="sortable" onclick="urutkanKolomTabelMurni(\'tabelAuditM3\',3,false)">Nama</th><th rowspan="2">Tarif</th><th rowspan="2" class="sortable" onclick="urutkanKolomTabelMurni(\'tabelAuditM3\',5,true)">Daya</th>';
+            let hdr2 = '<tr>';
+            jnData.tahun_ring.forEach((thn, i) => {
+                hdr1 += `<th rowspan="2" class="sortable" style="background-color:#6f42c1;" onclick="urutkanKolomTabelMurni('tabelAuditM3',${6+i},true)">${thn}</th>`;
+            });
+            const colTrend = 6 + jnData.tahun_ring.length;
+            hdr1 += `<th rowspan="2" style="min-width:280px; background-color:#2b4c7e;">Trend Jam Nyala</th>`;
+            hdr1 += `<th rowspan="2" class="sortable" onclick="urutkanKolomTabelMurni('tabelAuditM3',${colTrend+1},true)">MoM</th>`;
+            hdr1 += `<th rowspan="2" class="sortable" onclick="urutkanKolomTabelMurni('tabelAuditM3',${colTrend+2},true)">${labelDevDinamis()}</th>`;
+            hdr1 += '</tr>';
+            thead.innerHTML = hdr1;
+
+            // Build rows
+            tbody.innerHTML = '';
+            let counter = 0;
+            arrayHasilM3.forEach(row => {
+                if (!lolosFilterUnit(row, '3')) return;
+                if (!lolosFilterDayaM3(row.daya)) return;
+
+                counter++;
+                const tr = document.createElement('tr');
+
+                // Ringkasan tahunan (tumpuk avg/max/min)
+                let ringHtml = '';
+                jnData.tahun_ring.forEach(thn => {
+                    const r = row.ringkasan[String(thn)];
+                    if (r) {
+                        ringHtml += `<td class="text-center-cell"><strong>${r[0]}</strong><span class="small-text">max ${r[1]} | min ${r[2]}</span></td>`;
+                    } else {
+                        ringHtml += '<td class="text-center-cell text-muted">-</td>';
+                    }
+                });
+
+                // Trend line SVG
+                const svgId = 'svg_m3_' + row.idpel;
+                const trendHtml = `<td style="padding:4px;"><div id="${svgId}" style="width:280px;height:70px;"></div></td>`;
+
+                // Deviasi MoM
+                const momTxt = row.devMoM !== null ? ((row.devMoM >= 0 ? '+' : '') + (row.devMoM * 100).toFixed(1) + '%') : '-';
+                const momClass = row.devMoM !== null ? (row.devMoM >= 0 ? 'text-plus' : 'text-minus') : '';
+
+                // Deviasi dinamis
+                const devD = hitungDevDinamis(row);
+                const devDTxt = devD !== null ? ((devD >= 0 ? '+' : '') + (devD * 100).toFixed(1) + '%') : '-';
+                const devDClass = devD !== null ? (devD >= 0 ? 'text-plus' : 'text-minus') : '';
+
+                tr.innerHTML = `
+                    <td>${row.up3}</td>
+                    <td>${row.ulp}</td>
+                    <td><span class="badge bg-secondary">${row.idpel}</span></td>
+                    <td><strong>${row.nama}</strong></td>
+                    <td class="text-center-cell">${row.tarif}</td>
+                    <td class="text-center-cell"><span class="badge bg-daya">${row.daya.toLocaleString()} VA</span></td>
+                    ${ringHtml}
+                    ${trendHtml}
+                    <td class="text-end ${momClass}" data-sort-value="${row.devMoM !== null ? row.devMoM : -999}">${momTxt}</td>
+                    <td class="text-end ${devDClass}" data-sort-value="${devD !== null ? devD : -999}">${devDTxt}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('containerHasilM3').style.display = 'block';
+            document.getElementById('notifAmanM3').style.display = 'none';
+            document.getElementById('counterHasilM3').innerText = `Menampilkan ${counter} pelanggan dari ${arrayHasilM3.length} data.`;
+
+            // Render SVG trend lines after DOM is ready
+            setTimeout(() => renderSemuaTrendSVG(), 50);
+        }
+
+        function renderSemuaTrendSVG() {
+            arrayHasilM3.forEach(row => {
+                const container = document.getElementById('svg_m3_' + row.idpel);
+                if (!container || container.querySelector('svg')) return;
+                if (!lolosFilterUnit(row, '3') || !lolosFilterDayaM3(row.daya)) return;
+
+                const vals = row.tsGrafik;
+                const labels = bulanTerpilihM3.map(ym => ym.slice(5)); // "01", "02", etc
+                const validVals = vals.filter(v => v !== null && v !== undefined);
+                if (validVals.length === 0) { container.innerHTML = '<span class="small-text">Tidak ada data</span>'; return; }
+
+                const W = 280, H = 70, padL = 10, padR = 10, padT = 18, padB = 16;
+                const plotW = W - padL - padR, plotH = H - padT - padB;
+                const maxV = Math.max(...validVals, 1), minV = Math.min(...validVals, 0);
+                const range = maxV - minV || 1;
+
+                // Build points
+                const points = [];
+                vals.forEach((v, i) => {
+                    if (v === null || v === undefined) return;
+                    const x = padL + (vals.length > 1 ? i / (vals.length - 1) : 0.5) * plotW;
+                    const y = padT + plotH - ((v - minV) / range) * plotH;
+                    points.push({ x, y, v, lbl: labels[i] });
+                });
+
+                let svg = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="font-family:sans-serif;">`;
+                // Line
+                if (points.length > 1) {
+                    const polyStr = points.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+                    svg += `<polyline points="${polyStr}" fill="none" stroke="#4a6fa5" stroke-width="1.5" stroke-linejoin="round"/>`;
+                }
+                // Points + labels
+                points.forEach((p, i) => {
+                    const isOver720 = p.v > 720;
+                    const color = isOver720 ? '#dc3545' : '#1e3a8a';
+                    const r = 2.5;
+                    // Label above or below depending on position
+                    const labelY = p.y < padT + 12 ? p.y + 12 : p.y - 5;
+                    svg += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r}" fill="${color}" class="jn-dot" data-idx="${i}"/>`;
+                    svg += `<text x="${p.x.toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" font-size="7" fill="${color}" font-weight="bold" class="jn-lbl" data-idx="${i}">${Math.round(p.v)}</text>`;
+                });
+                svg += '</svg>';
+                container.innerHTML = svg;
+
+                // Zoom on hover
+                const svgEl = container.querySelector('svg');
+                svgEl.querySelectorAll('.jn-dot').forEach(dot => {
+                    const idx = dot.getAttribute('data-idx');
+                    dot.addEventListener('mouseenter', () => {
+                        dot.setAttribute('r', '5');
+                        const lbl = svgEl.querySelector(`.jn-lbl[data-idx="${idx}"]`);
+                        if (lbl) { lbl.setAttribute('font-size', '11'); lbl.setAttribute('font-weight', 'bold'); }
+                    });
+                    dot.addEventListener('mouseleave', () => {
+                        dot.setAttribute('r', '2.5');
+                        const lbl = svgEl.querySelector(`.jn-lbl[data-idx="${idx}"]`);
+                        if (lbl) { lbl.setAttribute('font-size', '7'); }
+                    });
+                });
+            });
+        }
+
     </script>
 </body>
 </html>
