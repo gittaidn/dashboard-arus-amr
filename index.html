@@ -458,8 +458,10 @@
         function segarkanCatatanHasil() {
             arrayHasilMenu1.forEach(row => { row.notes = ambilCatatan(row.idpel, row.notes); });
             arrayHasilMenu2.forEach(row => { row.notes = ambilCatatan(row.idpel, row.notes); });
+            arrayHasilM3.forEach(row => { row.notes = ambilCatatan(row.idpel, row.notes); });
             if (arrayHasilMenu1.length > 0) renderSaringanMenu1();
             if (arrayHasilMenu2.length > 0) renderSaringanMenu2();
+            if (arrayHasilM3.length > 0) renderSaringanMenu3();
         }
 
         fetch('data_historical.json')
@@ -1079,10 +1081,13 @@
                     // Timeseries untuk grafik
                     const tsGrafik = bulanTerpilihM3.map(ym => fullTs[ym]);
 
+                    // Catatan: cek notesLive, lalu fallback ke trendMaster/statsMaster
+                    const fallbackNotes = (trendMaster[idpel] && trendMaster[idpel].notes) || (statsMaster[idpel] && statsMaster[idpel].notes) || null;
+
                     arrayHasilM3.push({
                         idpel, nama: p.n, up3: p.u, ulp: p.l, tarif: p.t, daya: p.d,
                         ringkasan: p.r, tsGrafik, valAkhir, devMoM, fullTs,
-                        thnSblm
+                        thnSblm, notes: ambilCatatan(idpel, fallbackNotes)
                     });
                 }
 
@@ -1137,6 +1142,7 @@
             hdr1 += `<th rowspan="2" style="min-width:280px; background-color:#2b4c7e;">Trend Jam Nyala</th>`;
             hdr1 += `<th rowspan="2" class="sortable" onclick="urutkanKolomTabelMurni('tabelAuditM3',${colTrend+1},true)">MoM</th>`;
             hdr1 += `<th rowspan="2" class="sortable" onclick="urutkanKolomTabelMurni('tabelAuditM3',${colTrend+2},true)">${labelDevDinamis()}</th>`;
+            hdr1 += `<th rowspan="2">Catatan Lapangan</th>`;
             hdr1 += '</tr>';
             thead.innerHTML = hdr1;
 
@@ -1185,6 +1191,7 @@
                     ${trendHtml}
                     <td class="text-end ${momClass}" data-sort-value="${row.devMoM !== null ? row.devMoM : -999}">${momTxt}</td>
                     <td class="text-end ${devDClass}" data-sort-value="${devD !== null ? devD : -999}">${devDTxt}</td>
+                    <td style="font-size:11px;">${row.notes ? row.notes.pesan : '-'} <br><button onclick="bukaFormCatatan('${row.idpel}')" class="btn" style="background-color:#6f42c1; padding:2px 5px; font-size:10px;">📝 Update</button></td>
                 `;
                 tbody.appendChild(tr);
             });
