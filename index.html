@@ -617,8 +617,9 @@
             const headTr = document.getElementById('headTabel2');
             let headerHtml = `<tr>
                 <th class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit2', 0, true)">ID Pelanggan</th>
-                <th class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit2', 1, false)">Nama Pelanggan</th>`;
-            let currentColIdx = 2;
+                <th class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit2', 1, false)">Nama Pelanggan</th>
+                <th>Grafik Tren</th>`;
+            let currentColIdx = 3;
             listBulanTerpilihUser.forEach(ym => { 
                 headerHtml += `<th class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit2', ${currentColIdx}, true)">${konversiLabelBulan(ym)}</th>`; 
                 currentColIdx++;
@@ -626,7 +627,6 @@
             headerHtml += `
                 <th class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit2', ${currentColIdx}, true)">Deviasi ($N-1$)</th>
                 <th>Catatan Lapangan</th>
-                <th>Grafik Tren</th>
             </tr>`;
             headTr.innerHTML = headerHtml;
 
@@ -653,17 +653,15 @@
                     const textMoM = adaPlts ? "☀️ PLTS" : (dS.avg === 0 ? "-" : (devMoM > 0 ? "+" : "") + (devMoM * 100).toFixed(1) + "%");
                     const kelasMoM = adaPlts ? 'text-neutral' : (devMoM >= 0 ? 'text-plus' : 'text-minus');
                     const canvasId = "canvas_m2_" + row.idpel;
-                    let barisHtml = `<td><span class="badge bg-secondary">${row.idpel}</span><span class="small-text">${row.up3} / ${row.ulp}</span></td><td><strong>${row.nama}</strong></td>`;
+                    let barisHtml = `<td><span class="badge bg-secondary">${row.idpel}</span><span class="small-text">${row.up3} / ${row.ulp}</span></td><td><strong>${row.nama}</strong></td>
+                                  <td class="text-center-cell" style="vertical-align:middle;"><canvas id="${canvasId}" width="120" height="26"></canvas></td>`;
                     let points = [];
                     listBulanTerpilihUser.forEach(ym => {
                         let obj = row.semuaBulanData[ym] || { avg: 0, daya: 0 }; points.push(obj.avg);
                         barisHtml += `<td class="text-end" data-v="${obj.avg}"><strong>${obj.avg.toFixed(2)}</strong>${obj.plts ? '<span class="badge-plts" title="Bulan ini berstatus PLTS">☀️ PLTS</span>' : ''}${obj.dayaLalu ? `<span class="badge-daya" title="Daya berubah dari ${obj.dayaLalu.toLocaleString()} VA ke ${obj.daya.toLocaleString()} VA (pengukuran berbeda)">⚡ Daya berubah</span>` : ''}<br><span class="sub-daya-info">${obj.daya>0?obj.daya.toLocaleString()+' VA':'-'}</span></td>`;
                     });
                     barisHtml += `<td class="text-end ${kelasMoM} fw-bold" data-v="${adaPlts ? 0 : devMoM}" style="vertical-align:middle;">${textMoM}${(dA.dayaLalu || dS.dayaLalu) ? ' <span title="Ada perubahan daya pada bulan yang dibandingkan, deviasi kurang sebanding">⚡</span>' : ''}</td>
-                                  <td style="font-size:11px;">${row.notes ? row.notes.pesan : '-'} <br><button onclick="bukaFormCatatan('${row.idpel}')" class="btn btn-primary" style="padding:2px 5px; font-size:10px;">📝 Update</button></td>
-                                  <td class="text-center-cell" style="vertical-align:middle;">
-                                      <canvas id="${canvasId}" width="120" height="26"></canvas>
-                                  </td>`;
+                                  <td style="font-size:11px;">${row.notes ? row.notes.pesan : '-'} <br><button onclick="bukaFormCatatan('${row.idpel}')" class="btn btn-primary" style="padding:2px 5px; font-size:10px;">📝 Update</button></td>`;
                     tr.innerHTML = barisHtml; tbody.appendChild(tr);
                     drawSparklineDinamis(canvasId, points);
                 }
