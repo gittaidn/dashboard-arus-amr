@@ -29,7 +29,19 @@
         .tab-button.active { background: #1e3a8a; color: white; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        .table-responsive { width: 100%; overflow-x: auto; clear: both; }
+        /* Tabel punya area scroll sendiri (kiri-kanan & atas-bawah) supaya scrollbar horizontal
+           selalu terlihat di layar, bukan di dasar ribuan baris. Header tabel ikut menempel di atas. */
+        .table-responsive { width: 100%; overflow: auto; max-height: 78vh; clear: both; }
+        .table-responsive thead th { position: sticky; top: 0; z-index: 3; }
+        /* Menu 1: tabel dipadatkan, kolom ID & Nama dibekukan saat geser kiri-kanan */
+        #tabelAudit2 th, #tabelAudit2 td { padding: 6px 7px; font-size: 12px; white-space: nowrap; }
+        #tabelAudit2 th.sortable::after { font-size: 8px; }
+        #tabelAudit2 th:nth-child(1), #tabelAudit2 td:nth-child(1) { width: 118px; min-width: 118px; max-width: 118px; position: sticky; left: 0; z-index: 2; }
+        #tabelAudit2 th:nth-child(2), #tabelAudit2 td:nth-child(2) { min-width: 130px; max-width: 170px; white-space: normal; position: sticky; left: 118px; z-index: 2; box-shadow: inset -1px 0 0 #dee2e6, 3px 0 3px -2px rgba(0,0,0,0.15); }
+        #tabelAudit2 thead th:nth-child(-n+2) { z-index: 5; }
+        #tabelAudit2 tbody td:nth-child(-n+2) { background: #fff; }
+        #tabelAudit2 tbody tr:nth-child(even) td:nth-child(-n+2) { background: #f8f9fa; }
+        #tabelAudit2 td:last-child { white-space: normal; min-width: 140px; max-width: 220px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; font-size: 13px; }
         th, td { padding: 10px; border: 1px solid #dee2e6; text-align: left; }
         th { background-color: #1e3a8a; color: white; text-align: center; font-size: 13px; }
@@ -46,9 +58,9 @@
         .small-text { font-size: 11px; color: #7f8c8d; display: block; margin-top: 2px; }
         .text-plus { color: #28a745; font-weight: bold; }
         .text-minus { color: #dc3545; font-weight: bold; }
-        .badge-daya { background: #e7f1ff; color: #0a58ca; border: 1px solid #9ec5fe; font-size: 10px; padding: 1px 4px; border-radius: 3px; margin-left: 4px; white-space: nowrap; }
+        .badge-daya { background: #e7f1ff; color: #0a58ca; border: 1px solid #9ec5fe; font-size: 10px; padding: 1px 4px; border-radius: 3px; white-space: nowrap; display: block; width: fit-content; margin: 2px 0 0 auto; }
         .text-neutral { color: #6c757d; font-weight: bold; }
-        .badge-plts { background: #fff3cd; color: #856404; border: 1px solid #ffe08a; font-size: 10px; padding: 1px 4px; border-radius: 3px; margin-left: 4px; }
+        .badge-plts { background: #fff3cd; color: #856404; border: 1px solid #ffe08a; font-size: 10px; padding: 1px 4px; border-radius: 3px; display: block; width: fit-content; margin: 2px 0 0 auto; }
         canvas { background: #fff; border: 1px solid #e0e0e0; border-radius: 4px; }
         .label-picker { font-size: 13px; font-weight: bold; color: #495057; display: block; margin-bottom: 4px; }
         .sub-daya-info { font-size: 11px; color: #6f42c1; font-weight: bold; display: block; margin-top: 2px; }
@@ -449,6 +461,12 @@
             selectAkhir.value = isiAkhirLama || urutanBulanDinamis[urutanBulanDinamis.length - 1];
         }
 
+        function labelBulanPendek(ymStr) {
+            const m = ymStr.split('-');
+            const n = ["Des", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+            return n[parseInt(m[1])] + " " + m[0];
+        }
+
         function konversiLabelBulan(ymStr) {
             const m = ymStr.split('-');
             const namaBulan = ["Des", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
@@ -621,7 +639,7 @@
                 <th>Grafik Tren</th>`;
             let currentColIdx = 3;
             listBulanTerpilihUser.forEach(ym => { 
-                headerHtml += `<th class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit2', ${currentColIdx}, true)">${konversiLabelBulan(ym)}</th>`; 
+                headerHtml += `<th class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit2', ${currentColIdx}, true)">${labelBulanPendek(ym)}</th>`; 
                 currentColIdx++;
             });
             headerHtml += `
@@ -658,7 +676,7 @@
                     let points = [];
                     listBulanTerpilihUser.forEach(ym => {
                         let obj = row.semuaBulanData[ym] || { avg: 0, daya: 0 }; points.push(obj.avg);
-                        barisHtml += `<td class="text-end" data-v="${obj.avg}"><strong>${obj.avg.toFixed(2)}</strong>${obj.plts ? '<span class="badge-plts" title="Bulan ini berstatus PLTS">☀️ PLTS</span>' : ''}${obj.dayaLalu ? `<span class="badge-daya" title="Daya berubah dari ${obj.dayaLalu.toLocaleString()} VA ke ${obj.daya.toLocaleString()} VA (pengukuran berbeda)">⚡ Daya berubah</span>` : ''}<br><span class="sub-daya-info">${obj.daya>0?obj.daya.toLocaleString()+' VA':'-'}</span></td>`;
+                        barisHtml += `<td class="text-end" data-v="${obj.avg}"><strong>${obj.avg.toFixed(2)}</strong><br><span class="sub-daya-info">${obj.daya>0?obj.daya.toLocaleString()+' VA':'-'}</span>${obj.plts ? '<span class="badge-plts" title="Bulan ini berstatus PLTS">☀️ PLTS</span>' : ''}${obj.dayaLalu ? `<span class="badge-daya" title="Daya berubah dari ${obj.dayaLalu.toLocaleString()} VA ke ${obj.daya.toLocaleString()} VA (pengukuran berbeda)">⚡ Daya berubah</span>` : ''}</td>`;
                     });
                     barisHtml += `<td class="text-end ${kelasMoM} fw-bold" data-v="${adaPlts ? 0 : devMoM}" style="vertical-align:middle;">${textMoM}${(dA.dayaLalu || dS.dayaLalu) ? ' <span title="Ada perubahan daya pada bulan yang dibandingkan, deviasi kurang sebanding">⚡</span>' : ''}</td>
                                   <td style="font-size:11px;">${row.notes ? row.notes.pesan : '-'} <br><button onclick="bukaFormCatatan('${row.idpel}')" class="btn btn-primary" style="padding:2px 5px; font-size:10px;">📝 Update</button></td>`;
