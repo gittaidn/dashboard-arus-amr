@@ -46,6 +46,9 @@
         .small-text { font-size: 11px; color: #7f8c8d; display: block; margin-top: 2px; }
         .text-plus { color: #28a745; font-weight: bold; }
         .text-minus { color: #dc3545; font-weight: bold; }
+        .badge-daya { background: #e7f1ff; color: #0a58ca; border: 1px solid #9ec5fe; font-size: 10px; padding: 1px 4px; border-radius: 3px; margin-left: 4px; white-space: nowrap; }
+        .text-neutral { color: #6c757d; font-weight: bold; }
+        .badge-plts { background: #fff3cd; color: #856404; border: 1px solid #ffe08a; font-size: 10px; padding: 1px 4px; border-radius: 3px; margin-left: 4px; }
         canvas { background: #fff; border: 1px solid #e0e0e0; border-radius: 4px; }
         .label-picker { font-size: 13px; font-weight: bold; color: #495057; display: block; margin-bottom: 4px; }
         .sub-daya-info { font-size: 11px; color: #6f42c1; font-weight: bold; display: block; margin-top: 2px; }
@@ -58,7 +61,7 @@
 
     <div class="card text-center">
         <h2 class="fw-bold text-primary" style="margin:0 0 5px 0;">📊 Portal Audit & Analisis Pelanggan AMR – Non AMR 3 Fasa</h2>
-        <p style="color:#6c757d; margin:0;">Platform Sistem Pengawasan Skala Enterprise - Versi 10.0 Stable Database</p>
+        <p style="color:#6c757d; margin:0;">Platform Sistem Pengawasan Skala Enterprise - Versi 11.0 Stable Database</p>
     </div>
 
     <div id="notifErrorSistem" class="alert-error">⚠️ Peringatan: Rentang waktu terbalik atau durasi melebihi batas maksimal 12 bulan!</div>
@@ -71,108 +74,19 @@
             </div>
         </div>
         <p style="margin:10px 0 0 0; font-size:13px; color:#6c757d;">
-            ℹ️ Upload file CSV <strong>hanya diperlukan untuk Menu 1 dan Menu 2</strong>. 
-            Jika hanya ingin melihat <strong>Menu 3 (Analisis Jam Nyala)</strong>, langkah ini dapat dilewati — 
-            Menu 3 menggunakan database tersendiri yang sudah tersimpan.
+            ℹ️ Upload file CSV <strong>hanya diperlukan untuk Menu 1 (Tren Energi)</strong>. 
+            Jika hanya ingin melihat <strong>Menu 2 (Analisis Jam Nyala)</strong>, langkah ini dapat dilewati — 
+            Menu 2 menggunakan database tersendiri yang sudah tersimpan.
         </p>
     </div>
 
     <div class="tabs-container">
-        <button id="btnTab1" class="tab-button active" onclick="switchMenuTab('menuTab1')">🔎 MENU 1: Audit Anomali Harian (Max Puncak)</button>
-        <button id="btnTab2" class="tab-button" onclick="switchMenuTab('menuTab2')">📈 MENU 2: Analisis Dinamis Tren Rata-Rata Bulanan</button>
-        <button id="btnTab3" class="tab-button" onclick="switchMenuTab('menuTab3')">📊 MENU 3: Analisis Jam Nyala (Non AMR 3 Fasa)</button>
-    </div>
-
-    <!-- MENU TAB 1 -->
-    <div id="menuTab1" class="tab-content active">
-        <div class="card" style="background:#f1f3f9;">
-            <div class="row">
-                <div class="col-select">
-                    <label class="label-picker">🏢 UP3:</label>
-                    <select id="filterUp3_1" class="form-select text-primary" onchange="gantiUp3('1')"></select>
-                </div>
-                <div class="col-select">
-                    <label class="label-picker">📍 ULP:</label>
-                    <select id="filterUlp_1" class="form-select text-primary" onchange="renderSaringanMenu1()"></select>
-                </div>
-                <div class="col-select">
-                    <label class="label-picker">⚡ Daya (VA):</label>
-                    <select id="filterDaya_1" class="form-select text-primary" onchange="renderSaringanMenu1()">
-                        <option value="ALL">🌐 ALL (Semua Daya)</option>
-                        <option value="KECIL">Daya ≤ 41.500 VA</option>
-                        <option value="BESAR">Daya > 41.500 VA</option>
-                    </select>
-                </div>
-                <div class="col-select">
-                    <label class="label-picker">↕️ Arah Deviasi:</label>
-                    <select id="arahDeviasi1" class="form-select text-primary" onchange="renderSaringanMenu1()">
-                        <option value="ALL">Semua Arah Deviasi</option>
-                        <option value="PLUS">Hanya Lonjakan Arus (+)</option>
-                        <option value="MINUS">Hanya Penurunan Arus (-)</option>
-                    </select>
-                </div>
-                <div class="col-select">
-                    <label class="label-picker">🎯 Batas Deviasi:</label>
-                    <select id="filterDeviasi1" class="form-select text-danger" onchange="renderSaringanMenu1()">
-                        <option value="50">Batas Nilai: ≥ 50%</option>
-                        <option value="60">Batas Nilai: ≥ 60%</option>
-                        <option value="70">Batas Nilai: ≥ 70%</option>
-                        <option value="80">Batas Nilai: ≥ 80%</option>
-                        <option value="90">Batas Nilai: ≥ 90%</option>
-                    </select>
-                </div>
-                <div class="col-btn" style="align-self: flex-end;">
-                    <button id="btnProses1" onclick="eksekusiModul1()" class="btn btn-success">⚡ Jalankan Audit Menu 1</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="notifAman1" class="alert-success card">
-            <h3 style="margin:0 0 5px 0;">✅ Selesai! Data Aman (Menu 1)</h3>
-            <p style="margin:0;">Tidak ditemukan penyimpangan beban puncak harian dengan daya yang sama.</p>
-        </div>
-
-        <div class="card" id="containerHasil1" style="display:none;">
-            <div class="header-table-container" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h4 class="text-danger" style="margin:0;">Hasil Analisis Rekor Arus Maksimal (Hanya Komparasi Daya Sama)</h4>
-                <div style="display: flex; gap: 15px; align-items: center; width: 60%; justify-content: flex-end;">
-                    <button onclick="exportTabelKeExcelMurni('tabelAudit1', 'Hasil_Audit_Anomali_M1')" class="btn btn-success" style="width: auto; padding: 8px 15px; margin: 0; font-size: 13px;">🟢 Export Hasil Audit ke Excel</button>
-                    <input type="text" id="searchMenu1" class="search-box" style="margin:0; width:50%;" onkeyup="cariTabelLokal('tabelAudit1', 'searchMenu1')" placeholder="🔍 Cari IDPel / Nama Pelanggan...">
-                </div>
-            </div>
-            <div class="table-responsive">
-                <table id="tabelAudit1">
-                    <thead>
-                        <tr>
-                            <th rowspan="2" class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit1', 0, true)">ID Pelanggan</th>
-                            <th rowspan="2" class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit1', 1, false)">Nama Pelanggan</th>
-                            <th rowspan="2" class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit1', 2, true)">Daya</th>
-                            <th rowspan="2">Phasa</th>
-                            <th colspan="2" style="background-color: #198754;">DATA BULAN INI</th>
-                            <th colspan="5" style="background-color: #2b4c7e;">HISTORIS (DAYA SAMA)</th>
-                            <th rowspan="2" class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit1', 11, true)">Deviasi vs Max</th>
-                            <th rowspan="2" class="sortable" onclick="urutkanKolomTabelMurni('tabelAudit1', 12, true)">Deviasi vs Min</th>
-                            <th rowspan="2">Catatan Lapangan</th>
-                            <th rowspan="2">Status</th>
-                        </tr>
-                        <tr>
-                            <th class="sub-th sortable" style="background-color: #146c43;" onclick="urutkanKolomTabelMurni('tabelAudit1', 4, true)">Max Arus</th>
-                            <th class="sub-th" style="background-color: #146c43;">Waktu Kejadian</th>
-                            <th class="sub-th">Max Basis</th>
-                            <th class="sub-th">Tgl Max</th>
-                            <th class="sub-th">Min Basis</th>
-                            <th class="sub-th">Tgl Min</th>
-                            <th class="sub-th">Avg Basis</th>
-                        </tr>
-                    </thead>
-                    <tbody id="bodyTabel1"></tbody>
-                </table>
-            </div>
-        </div>
+        <button id="btnTab2" class="tab-button active" onclick="switchMenuTab('menuTab2')">📈 MENU 1: Analisis Dinamis Tren Rata-Rata Bulanan (Energi)</button>
+        <button id="btnTab3" class="tab-button" onclick="switchMenuTab('menuTab3')">📊 MENU 2: Analisis Jam Nyala (Non AMR 3 Fasa)</button>
     </div>
 
     <!-- MENU TAB 2 -->
-    <div id="menuTab2" class="tab-content">
+    <div id="menuTab2" class="tab-content active">
         <div class="card" style="background:#f1f3f9;">
             <div class="row">
                 <div style="flex:2; min-width:130px;">
@@ -211,8 +125,11 @@
                         <option value="MINUS_90">Penurunan Average: ≥ 90%</option>
                     </select>
                 </div>
+                <div style="flex:1; min-width:130px; align-self: flex-end;">
+                    <label class="label-picker" style="cursor:pointer;"><input type="checkbox" id="sembunyiPlts2" onchange="prosesSaringanDropdownMenu2Only()"> ☀️ Sembunyikan PLTS</label>
+                </div>
                 <div class="col-btn" style="align-self: flex-end;">
-                    <button id="btnProses2" onclick="eksekusiModul2()" class="btn btn-primary">📈 Jalankan Analisis Menu 2</button>
+                    <button id="btnProses2" onclick="eksekusiModul2()" class="btn btn-primary">📈 Jalankan Analisis Menu 1</button>
                 </div>
             </div>
             <div style="margin-top:10px; font-size:12px; color:#6c757d;">
@@ -227,9 +144,9 @@
 
         <div class="card" id="containerHasil2" style="display:none;">
             <div class="header-table-container" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h4 class="text-primary" style="margin:0;">Matriks Tren Rata-Rata Arus & Daya</h4>
+                <h4 class="text-primary" style="margin:0;">Matriks Tren Rata-Rata Energi & Daya</h4>
                 <div style="display: flex; gap: 15px; align-items: center; width: 60%; justify-content: flex-end;">
-                    <button onclick="exportTabelKeExcelMurni('tabelAudit2', 'Matriks_Tren_Arus_M2')" class="btn btn-primary" style="width: auto; padding: 8px 15px; margin: 0; font-size: 13px;">🔵 Export Matriks Tren ke Excel</button>
+                    <button onclick="exportTabelKeExcelMurni('tabelAudit2', 'Matriks_Tren_Energi')" class="btn btn-primary" style="width: auto; padding: 8px 15px; margin: 0; font-size: 13px;">🔵 Export Matriks Tren ke Excel</button>
                     <input type="text" id="searchMenu2" class="search-box" style="margin:0; width: 50%;" onkeyup="cariTabelLokal('tabelAudit2', 'searchMenu2')" placeholder="🔍 Cari IDPel / Nama Pelanggan...">
                 </div>
             </div>
@@ -281,11 +198,11 @@
                     </select>
                 </div>
                 <div class="col-btn" style="align-self: flex-end;">
-                    <button id="btnProses3" onclick="eksekusiModul3()" class="btn" style="background-color:#6f42c1;">📊 Jalankan Analisis Menu 3</button>
+                    <button id="btnProses3" onclick="eksekusiModul3()" class="btn" style="background-color:#6f42c1;">📊 Jalankan Analisis Menu 2</button>
                 </div>
             </div>
             <div style="margin-top:10px; font-size:12px; color:#6c757d;">
-                ℹ️ Menu 3 bersifat <strong>korektif</strong> — data diupdate bulanan setelah rekening terbit. Timeseries dibatasi <strong>maks 12 bulan</strong>, data terlama Januari 2024. Ringkasan tahunan mencakup <strong>5 tahun penuh terakhir</strong>.
+                ℹ️ Menu 2 bersifat <strong>korektif</strong> — data diupdate bulanan setelah rekening terbit. Timeseries dibatasi <strong>maks 12 bulan</strong>, data terlama Januari 2024. Ringkasan tahunan mencakup <strong>5 tahun penuh terakhir</strong>.
             </div>
         </div>
 
@@ -312,15 +229,18 @@
 
     <script>
         let trendMaster = {};
-        let statsMaster = {};
         let rowsJuniCache = null;
-        let arrayHasilMenu1 = [];
         let arrayHasilMenu2 = [];
         let urutanBulanDinamis = []; 
         let listBulanTerpilihUser = [];
         let arahSortState = true;
         let daftarBulanDatabase = []; // Diisi otomatis dari isi data_historical.json
         let uploadYMDetected = null;  // Bulan asli file CSV uploadan (dari kolom tanggal)
+
+        // Kolom CSV yang dijumlahkan menjadi nilai total (R+S+T).
+        // Harus SAMA dengan KOLOM_NILAI di hitung_arus.py.
+        // Sekarang memakai kolom kW: kw_r, kw_s, kw_t (huruf kecil semua).
+        const KOLOM_NILAI = ['kw_r', 'kw_s', 'kw_t'];
 
         // ==========================================================
         // KONFIGURASI WILAYAH: UP3 & ULP
@@ -335,7 +255,7 @@
         };
 
         function inisialisasiFilterUnit() {
-            ['1', '2', '3'].forEach(menu => {
+            ['2', '3'].forEach(menu => {
                 const selUp3 = document.getElementById('filterUp3_' + menu);
                 if (!selUp3) return;
                 selUp3.innerHTML = '<option value="ALL">🌐 ALL (Semua UP3)</option>';
@@ -367,7 +287,7 @@
         function gantiUp3(menu) {
             const up3Terpilih = document.getElementById('filterUp3_' + menu).value;
             isiDropdownUlp(menu, up3Terpilih); // Reset ULP ke ALL sesuai UP3 terpilih
-            if (menu === '1') renderSaringanMenu1();
+            if (menu === '3') renderSaringanMenu3();
             else prosesSaringanDropdownMenu2Only();
         }
 
@@ -410,11 +330,8 @@
         function resetCacheFileBaru() {
             rowsJuniCache = null;
             uploadYMDetected = null;
-            arrayHasilMenu1 = [];
             arrayHasilMenu2 = [];
-            document.getElementById('containerHasil1').style.display = 'none';
             document.getElementById('containerHasil2').style.display = 'none';
-            document.getElementById('notifAman1').style.display = 'none';
             document.getElementById('notifAman2').style.display = 'none';
         }
 
@@ -443,7 +360,7 @@
                     notesLive = hasil;
                     console.log('✅ Catatan Lapangan live dimuat: ' + Object.keys(hasil).length + ' catatan.');
                     // Segarkan tampilan jika tabel sudah terlanjur di-render
-                    if (arrayHasilMenu1.length > 0 || arrayHasilMenu2.length > 0) segarkanCatatanHasil();
+                    if (arrayHasilMenu2.length > 0 || arrayHasilM3.length > 0) segarkanCatatanHasil();
                 })
                 .catch(err => {
                     console.warn('⚠️ Catatan live gagal dimuat, memakai catatan dari JSON:', err);
@@ -456,10 +373,8 @@
         }
 
         function segarkanCatatanHasil() {
-            arrayHasilMenu1.forEach(row => { row.notes = ambilCatatan(row.idpel, row.notes); });
             arrayHasilMenu2.forEach(row => { row.notes = ambilCatatan(row.idpel, row.notes); });
             arrayHasilM3.forEach(row => { row.notes = ambilCatatan(row.idpel, row.notes); });
-            if (arrayHasilMenu1.length > 0) renderSaringanMenu1();
             if (arrayHasilMenu2.length > 0) renderSaringanMenu2();
             if (arrayHasilM3.length > 0) renderSaringanMenu3();
         }
@@ -469,29 +384,24 @@
             .then(data => {
                 // ==========================================================
                 // ADAPTER FORMAT v10 (struktur kompak) -> struktur internal.
-                // Format lama (v8/v9) tetap didukung sebagai fallback.
+                // Format v11 = hanya trend_master (tanpa stats_master). Format lama tetap terbaca.
                 // ==========================================================
                 if (data.versi && data.versi >= 10) {
                     daftarBulanDatabase = data.bulan;
-                    trendMaster = {}; statsMaster = {};
+                    trendMaster = {};
                     for (let id in data.trend_master) {
                         const e = data.trend_master[id];
                         const db = {};
                         data.bulan.forEach((ym, i) => {
                             const avg = e.a[i];
                             if (avg !== null && avg !== undefined) {
-                                db[ym] = { avg: avg, daya: (e.dx && e.dx[ym] !== undefined) ? e.dx[ym] : e.d };
+                                db[ym] = { avg: avg, daya: (e.dx && e.dx[ym] !== undefined) ? e.dx[ym] : e.d, plts: !!(e.p && e.p.indexOf(ym) !== -1), dayaLalu: (e.dc && e.dc[ym] !== undefined) ? e.dc[ym] : null };
                             }
                         });
                         trendMaster[id] = { nama: e.n, up3: e.u, ulp: e.l, notes: e.c || null, data_bulanan: db };
                     }
-                    for (let id in data.stats_master) {
-                        const e = data.stats_master[id];
-                        statsMaster[id] = { nama: e.n, up3: e.u, ulp: e.l, notes: e.c || null, daya_stats: e.s };
-                    }
                 } else {
                     trendMaster = data.trend_master;
-                    statsMaster = data.stats_master;
                     const setBulan = new Set();
                     for (let idpel in trendMaster) {
                         for (let ym in trendMaster[idpel].data_bulanan) setBulan.add(ym);
@@ -516,7 +426,6 @@
         function switchMenuTab(tabId) {
             document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            if(tabId==='menuTab1') document.getElementById('btnTab1').classList.add('active');
             if(tabId==='menuTab2') document.getElementById('btnTab2').classList.add('active');
             if(tabId==='menuTab3') { document.getElementById('btnTab3').classList.add('active'); muatJamNyalaLazy(); }
             document.getElementById(tabId).classList.add('active');
@@ -631,167 +540,21 @@
             reader.readAsText(fileInput.files[0]);
         }
 
-        function eksekusiModul1() {
-            const btn = document.getElementById('btnProses1');
-            btn.disabled = true; btn.className = "btn btn-warning"; btn.innerHTML = "⏳ Menghitung Menu 1...";
-            setTimeout(function() {
-                muatFileCacheSaja(function(rows) {
-                    if (!rows) {
-                        btn.disabled = false; btn.className = "btn btn-success"; btn.innerHTML = "⚡ Jalankan Audit Menu 1";
-                        return;
-                    }
-                    const groupMaxJuni = {};
-                    rows.forEach(row => {
-                        let keys = Object.keys(row);
-                        const idpel = row['idpel'] || row[keys.find(k => k.trim().toLowerCase() === 'idpel')]; 
-                        if (!idpel) return;
-                        
-                        if (!groupMaxJuni[idpel]) {
-                            groupMaxJuni[idpel] = { 
-                                daya_juni: parseInt(row['daya']) || 0, 
-                                up3: bersihkanKodeUnit(row['up3']),
-                                ulp: bersihkanKodeUnit(row['ulp']),
-                                max_r: 0, date_r: '-', 
-                                max_s: 0, date_s: '-', 
-                                max_t: 0, date_t: '-'
-                            };
-                        }
-                        const tgt = groupMaxJuni[idpel];
-                        ['r', 's', 't'].forEach(p => {
-                            const v = parseFloat(row['arus_' + p]) || 0;
-                            if (v > tgt['max_' + p]) { tgt['max_' + p] = v; tgt['date_' + p] = row['tanggal'] || '-'; }
-                        });
-                    });
-                    
-                    arrayHasilMenu1 = [];
-                    for (let idpel in groupMaxJuni) {
-                        const dbEntry = statsMaster[idpel];
-                        if (dbEntry) {
-                            const jData = groupMaxJuni[idpel];
-                            const dayaJuniTarget = jData.daya_juni;
-                            const dayaStr = dayaJuniTarget.toString();
-                            const semuaDayaHistoris = Object.keys(dbEntry.daya_stats);
-                            if (semuaDayaHistoris.length === 0) continue;
-
-                            // ==========================================================
-                            // DETEKSI DAYA BERUBAH:
-                            // Jika daya di CSV bulan ini tidak ada di histori, JANGAN
-                            // dilewati. Bandingkan dengan histori daya terakhir pelanggan
-                            // dan tandai statusnya sebagai "DAYA BERUBAH".
-                            // ==========================================================
-                            let dayaPembanding = dayaStr;
-                            let dayaBerubah = false;
-                            if (!dbEntry.daya_stats[dayaStr]) {
-                                dayaBerubah = true;
-                                // Cari daya TERBARU: telusuri bulan histori dari yang
-                                // paling akhir, ambil daya pertama yang ada di statistik
-                                let kandidat = null;
-                                const tEntry = trendMaster[idpel];
-                                if (tEntry) {
-                                    const ymsDesc = Object.keys(tEntry.data_bulanan).sort().reverse();
-                                    for (const ym of ymsDesc) {
-                                        const dTrend = String(tEntry.data_bulanan[ym].daya);
-                                        if (dbEntry.daya_stats[dTrend]) { kandidat = dTrend; break; }
-                                    }
-                                }
-                                dayaPembanding = kandidat || semuaDayaHistoris[semuaDayaHistoris.length - 1];
-                            }
-                            const phaseStats = dbEntry.daya_stats[dayaPembanding];
-                            
-                            ['R', 'S', 'T'].forEach(phase => {
-                                if (!phaseStats[phase]) return;
-                                const st = phaseStats[phase];
-                                let max_j = jData['max_' + phase.toLowerCase()];
-                                
-                                if (st.max_b > 0 && max_j > 0) {
-                                    // PENTING: Rumus Baru Deviasi vs Max dan Min tetap dipertahankan
-                                    let devVsMax = ((max_j - st.max_b) / st.max_b) * 100;
-                                    let devVsMin = st.min_b > 0 ? ((max_j - st.min_b) / st.min_b) * 100 : 0;                                    
-                                    arrayHasilMenu1.push({
-                                        idpel: idpel, nama: dbEntry.nama, daya: dayaJuniTarget,
-                                        dayaBerubah: dayaBerubah,
-                                        dayaHistoris: parseInt(dayaPembanding) || 0,
-                                        phasa: phase, arusJuni: max_j, tanggalJuni: jData['date_' + phase.toLowerCase()],
-                                        maxBasis: st.max_b, tglMaxBasis: st.date_max_b,
-                                        minBasis: st.min_b, tglMinBasis: st.date_min_b,
-                                        avgBasis: st.avg_b, 
-                                        devMaxVal: devVsMax, 
-                                        devMinVal: devVsMin,
-                                        up3: (jData.up3 && jData.up3 !== '-') ? jData.up3 : (dbEntry.up3 || '-'),
-                                        ulp: (jData.ulp && jData.ulp !== '-') ? jData.ulp : (dbEntry.ulp || '-'),
-                                        notes: ambilCatatan(idpel, dbEntry.notes)
-                                    });
-                                }
-                            });
-                        }
-                    }
-                    renderSaringanMenu1();
-                    btn.disabled = false; btn.className = "btn btn-success"; btn.innerHTML = "⚡ Jalankan Audit Menu 1";
-                });
-            }, 30);
-        }
-
-        function renderSaringanMenu1() {
-            const dirOpt = document.getElementById('arahDeviasi1').value;
-            const threshold = parseFloat(document.getElementById('filterDeviasi1').value);
-            const tbody = document.getElementById('bodyTabel1'); tbody.innerHTML = '';
-            let counter = 0;
-            
-            arrayHasilMenu1.forEach(row => {
-                let selisihNormal = row.devMaxVal - 100; 
-                let lolosArah = (dirOpt === "ALL" && Math.abs(row.devMaxVal) >= threshold) || 
-                                (dirOpt === "PLUS" && row.devMaxVal >= threshold) || 
-                                (dirOpt === "MINUS" && row.devMaxVal <= -threshold);
-                
-                if (lolosArah && lolosFilterUnit(row, '1') && lolosFilterDaya(row.daya, '1')) {
-                    counter++; const tr = document.createElement('tr');
-                    const infoDaya = row.dayaBerubah
-                        ? `<span class="badge" style="background-color:#fd7e14; color:white;">${row.daya.toLocaleString()} VA</span><span class="small-text">Histori: ${row.dayaHistoris.toLocaleString()} VA</span>`
-                        : `<span class="badge bg-daya">${row.daya.toLocaleString()} VA</span>`;
-                    const txtDevMin = row.devMinVal > 100 ? "&gt;100%" : row.devMinVal.toFixed(1) + "%";
-                    const badgeStatus = row.dayaBerubah
-                        ? `<span class="badge" style="background-color:#fd7e14; color:white;">DAYA BERUBAH</span>`
-                        : `<span class="badge" style="background-color:#dc3545; color:white;">ANOMALI</span>`;
-                    tr.innerHTML = `
-                        <td><span class="badge bg-secondary">${row.idpel}</span><span class="small-text">${row.up3} / ${row.ulp}</span></td>
-                        <td><strong>${row.nama}</strong></td>
-                        <td class="text-center-cell">${infoDaya}</td>
-                        <td class="text-center-cell fw-bold text-primary">${row.phasa}</td>
-                        <td class="text-end fw-bold" style="color:#198754;">${row.arusJuni.toFixed(2)} A</td>
-                        <td><span class="small-text">${row.tanggalJuni}</span></td>
-                        <td class="text-end fw-bold">${row.maxBasis.toFixed(2)} A</td>
-                        <td><span class="small-text">${row.tglMaxBasis}</span></td>
-                        <td class="text-end text-muted">${row.minBasis.toFixed(2)} A</td>
-                        <td><span class="small-text">${row.tglMinBasis}</span></td>
-                        <td class="text-end text-muted fw-bold">${row.avgBasis.toFixed(2)} A</td>
-                        <td class="text-end fw-bold text-primary">${row.devMaxVal.toFixed(1)}%</td>
-                        <td class="text-end fw-bold text-primary">${txtDevMin}</td>
-                        <td style="font-size:11px;">${row.notes ? row.notes.pesan : '-'} <br><button onclick="bukaFormCatatan('${row.idpel}')" class="btn btn-primary" style="padding:2px 5px; font-size:10px;">📝 Update</button></td>
-                        <td class="text-center-cell">${badgeStatus}</td>
-                    `;
-                    tbody.appendChild(tr);
-                }
-            });
-            document.getElementById('notifAman1').style.display = counter === 0 ? 'block' : 'none';
-            document.getElementById('containerHasil1').style.display = counter === 0 ? 'none' : 'block';
-            let fV = document.getElementById('searchMenu1').value; if(fV) cariTabelLokal('tabelAudit1', 'searchMenu1');
-        }
-
         function eksekusiModul2() {
             const btn = document.getElementById('btnProses2');
             btn.disabled = true; btn.className = "btn btn-warning"; btn.innerHTML = "⏳ Menghitung Tren...";
             setTimeout(function() {
                 muatFileCacheSaja(function(rows) {
                     if (!rows) {
-                        btn.disabled = false; btn.className = "btn btn-primary"; btn.innerHTML = "📈 Jalankan Analisis Menu 2";
+                        btn.disabled = false; btn.className = "btn btn-primary"; btn.innerHTML = "📈 Jalankan Analisis Menu 1";
                         return;
                     }
                     // Pastikan rentang bulan valid & terdaftar sebelum memproses
                     if (!eksekusiValidasiRentangWaktu(true)) {
-                        btn.disabled = false; btn.className = "btn btn-primary"; btn.innerHTML = "📈 Jalankan Analisis Menu 2";
+                        btn.disabled = false; btn.className = "btn btn-primary"; btn.innerHTML = "📈 Jalankan Analisis Menu 1";
                         return;
                     }
-                    const sumG = {}, countG = {}, metaD = {}, metaUp3 = {}, metaUlp = {};
+                    const sumG = {}, countG = {}, metaD = {}, metaUp3 = {}, metaUlp = {}, pltsG = {}, tglG = {};
                     const idpelAktifBulanIni = new Set();
                     rows.forEach(row => {
                         let keys = Object.keys(row);
@@ -799,9 +562,12 @@
                         if (!idpel) return;
                         
                         idpelAktifBulanIni.add(idpel.toString());
-                        sumG[idpel] = (sumG[idpel] || 0) + (parseFloat(row['arus_r'])||0) + (parseFloat(row['arus_s'])||0) + (parseFloat(row['arus_t'])||0);
+                        sumG[idpel] = (sumG[idpel] || 0) + KOLOM_NILAI.reduce((acc, k) => acc + Math.abs(parseFloat(String(row[k] || '').replace(',', '.')) || 0), 0);
                         countG[idpel] = (countG[idpel] || 0) + 1;
-                        if (row['daya']) metaD[idpel] = parseInt(row['daya']);
+                        if (String(row['location_type'] || '').trim().toLowerCase() === 'plts') pltsG[idpel] = true;
+                        // Daya diambil dari baris dengan TANGGAL TERBARU (bukan baris terakhir di file)
+                        const tglRow = String(row['tanggal'] || '');
+                        if (row['daya'] && (tglG[idpel] === undefined || tglRow >= tglG[idpel])) { metaD[idpel] = parseInt(row['daya']); tglG[idpel] = tglRow; }
                         if (row['up3']) metaUp3[idpel] = bersihkanKodeUnit(row['up3']);
                         if (row['ulp']) metaUlp[idpel] = bersihkanKodeUnit(row['ulp']);
                     });
@@ -819,13 +585,16 @@
                         const entry = trendMaster[idpel];
                         const historyLengkap = {};
                         for (let ym in entry.data_bulanan) {
-                            historyLengkap[ym] = { avg: entry.data_bulanan[ym].avg, daya: entry.data_bulanan[ym].daya };
+                            historyLengkap[ym] = { avg: entry.data_bulanan[ym].avg, daya: entry.data_bulanan[ym].daya, plts: !!entry.data_bulanan[ym].plts, dayaLalu: entry.data_bulanan[ym].dayaLalu };
                         }
                         let dTerakhir = metaD[idpel] || (entry.data_bulanan[uploadYM] ? entry.data_bulanan[uploadYM].daya : Object.values(entry.data_bulanan)[0].daya);
+                        // Bandingkan daya CSV dengan daya bulan data terdekat sebelum bulan upload
+                        const bulanSblmUp = Object.keys(entry.data_bulanan).filter(y => y < uploadYM).sort().pop();
+                        const dayaLaluUp = (bulanSblmUp && entry.data_bulanan[bulanSblmUp].daya !== dTerakhir) ? entry.data_bulanan[bulanSblmUp].daya : null;
                         if (sumG[idpel] && countG[idpel] > 0) {
-                            historyLengkap[uploadYM] = { avg: sumG[idpel] / countG[idpel], daya: dTerakhir };
+                            historyLengkap[uploadYM] = { avg: sumG[idpel] / countG[idpel], daya: dTerakhir, plts: !!pltsG[idpel], dayaLalu: dayaLaluUp };
                         } else {
-                            historyLengkap[uploadYM] = { avg: 0, daya: dTerakhir };
+                            historyLengkap[uploadYM] = { avg: 0, daya: dTerakhir, plts: !!pltsG[idpel], dayaLalu: dayaLaluUp };
                         }
                         
                         arrayHasilMenu2.push({ 
@@ -839,7 +608,7 @@
                         });
                     }
                     renderSaringanMenu2();
-                    btn.disabled = false; btn.className = "btn btn-primary"; btn.innerHTML = "📈 Jalankan Analisis Menu 2";
+                    btn.disabled = false; btn.className = "btn btn-primary"; btn.innerHTML = "📈 Jalankan Analisis Menu 1";
                 });
             }, 30);
         }
@@ -862,6 +631,7 @@
             headTr.innerHTML = headerHtml;
 
             const filterOpt = document.getElementById('filterDeviasi2').value;
+            const sembunyiPlts = document.getElementById('sembunyiPlts2').checked;
             const tbody = document.getElementById('bodyTabel2'); tbody.innerHTML = '';
             const bulanAkhir = listBulanTerpilihUser[listBulanTerpilihUser.length - 1];
             const idxAkhirGlobal = urutanBulanDinamis.indexOf(bulanAkhir);
@@ -872,19 +642,24 @@
                 const dA = row.semuaBulanData[bulanAkhir] || { avg: 0, daya: 0 };
                 const dS = bulanSebelum ? (row.semuaBulanData[bulanSebelum] || { avg: 0, daya: 0 }) : { avg: 0, daya: 0 };
                 let devMoM = dS.avg > 0 ? (dA.avg - dS.avg) / dS.avg : 0;
+                // PLTS: bulan akhir atau bulan pembanding berstatus PLTS -> deviasi netral & dikecualikan dari filter anomali
+                const adaPlts = !!(dA.plts || dS.plts);
+                if (sembunyiPlts && adaPlts) return;
                 let lolos = filterOpt === "SHOW_ALL" || (filterOpt.startsWith("PLUS") && devMoM >= parseFloat(filterOpt.split('_')[1])/100) || (filterOpt.startsWith("MINUS") && devMoM <= -parseFloat(filterOpt.split('_')[1])/100);
+                if (adaPlts && filterOpt !== "SHOW_ALL") lolos = false;
                 
                 if (lolos && lolosFilterUnit(row, '2') && lolosFilterDaya(row.dayaCsv, '2')) {
                     counter++; const tr = document.createElement('tr');
-                    const textMoM = dS.avg === 0 ? "-" : (devMoM > 0 ? "+" : "") + (devMoM * 100).toFixed(1) + "%";
+                    const textMoM = adaPlts ? "☀️ PLTS" : (dS.avg === 0 ? "-" : (devMoM > 0 ? "+" : "") + (devMoM * 100).toFixed(1) + "%");
+                    const kelasMoM = adaPlts ? 'text-neutral' : (devMoM >= 0 ? 'text-plus' : 'text-minus');
                     const canvasId = "canvas_m2_" + row.idpel;
                     let barisHtml = `<td><span class="badge bg-secondary">${row.idpel}</span><span class="small-text">${row.up3} / ${row.ulp}</span></td><td><strong>${row.nama}</strong></td>`;
                     let points = [];
                     listBulanTerpilihUser.forEach(ym => {
                         let obj = row.semuaBulanData[ym] || { avg: 0, daya: 0 }; points.push(obj.avg);
-                        barisHtml += `<td class="text-end"><strong>${obj.avg.toFixed(2)} A</strong><br><span class="sub-daya-info">${obj.daya>0?obj.daya.toLocaleString()+' VA':'-'}</span></td>`;
+                        barisHtml += `<td class="text-end" data-v="${obj.avg}"><strong>${obj.avg.toFixed(2)}</strong>${obj.plts ? '<span class="badge-plts" title="Bulan ini berstatus PLTS">☀️ PLTS</span>' : ''}${obj.dayaLalu ? `<span class="badge-daya" title="Daya berubah dari ${obj.dayaLalu.toLocaleString()} VA ke ${obj.daya.toLocaleString()} VA (pengukuran berbeda)">⚡ Daya berubah</span>` : ''}<br><span class="sub-daya-info">${obj.daya>0?obj.daya.toLocaleString()+' VA':'-'}</span></td>`;
                     });
-                    barisHtml += `<td class="text-end ${devMoM>=0?'text-plus':'text-minus'} fw-bold" style="vertical-align:middle;">${textMoM}</td>
+                    barisHtml += `<td class="text-end ${kelasMoM} fw-bold" data-v="${adaPlts ? 0 : devMoM}" style="vertical-align:middle;">${textMoM}${(dA.dayaLalu || dS.dayaLalu) ? ' <span title="Ada perubahan daya pada bulan yang dibandingkan, deviasi kurang sebanding">⚡</span>' : ''}</td>
                                   <td style="font-size:11px;">${row.notes ? row.notes.pesan : '-'} <br><button onclick="bukaFormCatatan('${row.idpel}')" class="btn btn-primary" style="padding:2px 5px; font-size:10px;">📝 Update</button></td>
                                   <td class="text-center-cell" style="vertical-align:middle;">
                                       <canvas id="${canvasId}" width="120" height="26"></canvas>
@@ -935,8 +710,8 @@
                 let vA = cellA.textContent.trim();
                 let vB = cellB.textContent.trim();
                 if (isNumeric) {
-                    vA = parseFloat(vA.replace(/[^\d.-]/g, '')) || 0;
-                    vB = parseFloat(vB.replace(/[^\d.-]/g, '')) || 0;
+                    vA = cellA.dataset.v !== undefined ? parseFloat(cellA.dataset.v) || 0 : parseFloat(vA.replace(/[^\d.-]/g, '')) || 0;
+                    vB = cellB.dataset.v !== undefined ? parseFloat(cellB.dataset.v) || 0 : parseFloat(vB.replace(/[^\d.-]/g, '')) || 0;
                     return arahSortState ? vA - vB : vB - vA;
                 }
                 return arahSortState ? vA.localeCompare(vB) : vB.localeCompare(vA);
@@ -944,13 +719,27 @@
             rows.forEach(r => tbody.appendChild(r));
         }
 
-        // KEMBALI KE ASLI: Fungsi pencarian lokal bawaan dashboard yang super responsif
+        // Pencarian lokal. Kolom ID & Nama berbeda per tabel:
+        //   tabelAudit2  -> ID di kolom 0, Nama di kolom 1
+        //   tabelAuditM3 -> UP3(0) ULP(1) ID(2) Nama(3)
+        const KOLOM_CARI = { tabelAudit2: [0, 1], tabelAuditM3: [2, 3] };
+
         function cariTabelLokal(tId, iId) {
-            let f = document.getElementById(iId).value.toLowerCase();
-            let tr = document.getElementById(tId).getElementsByTagName("tr");
-            for (let i = (tId === "tabelAudit1" ? 2 : 1); i < tr.length; i++) {
-                let id = tr[i].cells[0].textContent.toLowerCase(), nm = tr[i].cells[1].textContent.toLowerCase();
-                tr[i].style.display = (id.includes(f) || nm.includes(f)) ? "" : "none";
+            const f = document.getElementById(iId).value.toLowerCase().trim();
+            const [cId, cNm] = KOLOM_CARI[tId] || [0, 1];
+            const rows = document.getElementById(tId).querySelectorAll('tbody tr');
+            let tampil = 0;
+            rows.forEach(tr => {
+                const id = tr.cells[cId] ? tr.cells[cId].textContent.toLowerCase() : '';
+                const nm = tr.cells[cNm] ? tr.cells[cNm].textContent.toLowerCase() : '';
+                const cocok = id.includes(f) || nm.includes(f);
+                tr.style.display = cocok ? '' : 'none';
+                if (cocok) tampil++;
+            });
+            if (tId === 'tabelAuditM3') {
+                document.getElementById('counterHasilM3').innerText = f
+                    ? `Pencarian "${f}": ${tampil} pelanggan ditemukan.`
+                    : `Menampilkan ${rows.length} pelanggan dari ${arrayHasilM3.length} data.`;
             }
         }
 
@@ -1081,8 +870,8 @@
                     // Timeseries untuk grafik
                     const tsGrafik = bulanTerpilihM3.map(ym => fullTs[ym]);
 
-                    // Catatan: cek notesLive, lalu fallback ke trendMaster/statsMaster
-                    const fallbackNotes = (trendMaster[idpel] && trendMaster[idpel].notes) || (statsMaster[idpel] && statsMaster[idpel].notes) || null;
+                    // Catatan: cek notesLive, lalu fallback ke trendMaster
+                    const fallbackNotes = (trendMaster[idpel] && trendMaster[idpel].notes) || null;
 
                     arrayHasilM3.push({
                         idpel, nama: p.n, up3: p.u, ulp: p.l, tarif: p.t, daya: p.d,
@@ -1092,7 +881,7 @@
                 }
 
                 renderSaringanMenu3();
-                btn.disabled = false; btn.className = 'btn'; btn.style.backgroundColor = '#6f42c1'; btn.innerHTML = '📊 Jalankan Analisis Menu 3';
+                btn.disabled = false; btn.className = 'btn'; btn.style.backgroundColor = '#6f42c1'; btn.innerHTML = '📊 Jalankan Analisis Menu 2';
             }, 50);
         }
 
@@ -1199,6 +988,9 @@
             document.getElementById('containerHasilM3').style.display = 'block';
             document.getElementById('notifAmanM3').style.display = 'none';
             document.getElementById('counterHasilM3').innerText = `Menampilkan ${counter} pelanggan dari ${arrayHasilM3.length} data.`;
+
+            // Terapkan ulang kata kunci pencarian (jika ada) setelah tabel dirender ulang
+            if (document.getElementById('searchMenu3').value.trim()) cariTabelLokal('tabelAuditM3', 'searchMenu3');
 
             // Render SVG trend lines after DOM is ready
             setTimeout(() => renderSemuaTrendSVG(), 50);
