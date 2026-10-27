@@ -461,6 +461,17 @@
             selectAkhir.value = isiAkhirLama || urutanBulanDinamis[urutanBulanDinamis.length - 1];
         }
 
+        // Format tampilan angka energi: desimal mengikuti besar angka supaya rapi tapi nilai kecil tidak hilang.
+        //   >= 100 -> bulat | 1 - 99.9 -> 1 desimal | 0 < x < 1 -> 2 desimal | 0 -> "0"
+        function formatEnergi(v) {
+            if (v === null || v === undefined || isNaN(v)) return '-';
+            const a = Math.abs(v);
+            if (a === 0) return '0';
+            if (a >= 99.95) return String(Math.round(v));
+            if (a >= 0.995) return v.toFixed(1);
+            return v.toFixed(2);
+        }
+
         function labelBulanPendek(ymStr) {
             const m = ymStr.split('-');
             const n = ["Des", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
@@ -676,7 +687,7 @@
                     let points = [];
                     listBulanTerpilihUser.forEach(ym => {
                         let obj = row.semuaBulanData[ym] || { avg: 0, daya: 0 }; points.push(obj.avg);
-                        barisHtml += `<td class="text-end" data-v="${obj.avg}"><strong>${obj.avg.toFixed(2)}</strong><br><span class="sub-daya-info">${obj.daya>0?obj.daya.toLocaleString()+' VA':'-'}</span>${obj.plts ? '<span class="badge-plts" title="Bulan ini berstatus PLTS">☀️ PLTS</span>' : ''}${obj.dayaLalu ? `<span class="badge-daya" title="Daya berubah dari ${obj.dayaLalu.toLocaleString()} VA ke ${obj.daya.toLocaleString()} VA (pengukuran berbeda)">⚡ Daya berubah</span>` : ''}</td>`;
+                        barisHtml += `<td class="text-end" data-v="${obj.avg}"><strong>${formatEnergi(obj.avg)}</strong><br><span class="sub-daya-info">${obj.daya>0?obj.daya.toLocaleString()+' VA':'-'}</span>${obj.plts ? '<span class="badge-plts" title="Bulan ini berstatus PLTS">☀️ PLTS</span>' : ''}${obj.dayaLalu ? `<span class="badge-daya" title="Daya berubah dari ${obj.dayaLalu.toLocaleString()} VA ke ${obj.daya.toLocaleString()} VA (pengukuran berbeda)">⚡ Daya berubah</span>` : ''}</td>`;
                     });
                     barisHtml += `<td class="text-end ${kelasMoM} fw-bold" data-v="${adaPlts ? 0 : devMoM}" style="vertical-align:middle;">${textMoM}${(dA.dayaLalu || dS.dayaLalu) ? ' <span title="Ada perubahan daya pada bulan yang dibandingkan, deviasi kurang sebanding">⚡</span>' : ''}</td>
                                   <td style="font-size:11px;">${row.notes ? row.notes.pesan : '-'} <br><button onclick="bukaFormCatatan('${row.idpel}')" class="btn btn-primary" style="padding:2px 5px; font-size:10px;">📝 Update</button></td>`;
