@@ -59,6 +59,8 @@
         .text-plus { color: #28a745; font-weight: bold; }
         .text-minus { color: #dc3545; font-weight: bold; }
         .badge-daya { background: #e7f1ff; color: #0a58ca; border: 1px solid #9ec5fe; font-size: 10px; padding: 1px 4px; border-radius: 3px; white-space: nowrap; display: block; width: fit-content; margin: 2px 0 0 auto; }
+        .cell-nodata { background: #eceff1 !important; color: #90a4ae; font-style: italic; font-size: 11px; text-align: center; vertical-align: middle; }
+        .text-nodata { color: #90a4ae; font-style: italic; font-weight: normal; }
         .text-neutral { color: #6c757d; font-weight: bold; }
         .badge-plts { background: #fff3cd; color: #856404; border: 1px solid #ffe08a; font-size: 10px; padding: 1px 4px; border-radius: 3px; display: block; width: fit-content; margin: 2px 0 0 auto; }
         canvas { background: #fff; border: 1px solid #e0e0e0; border-radius: 4px; }
@@ -583,16 +585,24 @@
                         btn.disabled = false; btn.className = "btn btn-primary"; btn.innerHTML = "📈 Jalankan Analisis Menu 1";
                         return;
                     }
-                    const sumG = {}, countG = {}, metaD = {}, metaUp3 = {}, metaUlp = {}, pltsG = {}, tglG = {};
+                    const sumG = {}, countG = {}, metaD = {}, metaUp3 = {}, metaUlp = {}, pltsG = {}, tglG = {}, metaNama = {};
                     const idpelAktifBulanIni = new Set();
                     rows.forEach(row => {
                         let keys = Object.keys(row);
-                        const idpel = row['idpel'] || row[keys.find(k => k.trim().toLowerCase() === 'idpel')]; 
+                        const idRaw = row['idpel'] || row[keys.find(k => k.trim().toLowerCase() === 'idpel')]; 
+                        if (!idRaw) return;
+                        const idpel = String(idRaw).replace(/\.0$/, '').trim();
                         if (!idpel) return;
                         
-                        idpelAktifBulanIni.add(idpel.toString());
-                        sumG[idpel] = (sumG[idpel] || 0) + KOLOM_NILAI.reduce((acc, k) => acc + Math.abs(parseFloat(String(row[k] || '').replace(',', '.')) || 0), 0);
-                        countG[idpel] = (countG[idpel] || 0) + 1;
+                        idpelAktifBulanIni.add(idpel);
+                        // Sel kosong / '-' = TIDAK ADA BACAAN (bukan nol). Baris tanpa satu pun bacaan tidak ikut rata-rata.
+                        const nilaiAda = KOLOM_NILAI.map(k => parseFloat(String(row[k] == null ? '' : row[k]).trim().replace(',', '.')))
+                                                    .filter(v => !isNaN(v)).map(v => Math.abs(v));
+                        if (nilaiAda.length > 0) {
+                            sumG[idpel] = (sumG[idpel] || 0) + nilaiAda.reduce((a, b) => a + b, 0);
+                            countG[idpel] = (countG[idpel] || 0) + 1;
+                        }
+                        if (row['nama_pelanggan']) metaNama[idpel] = row['nama_pelanggan'];
                         if (String(row['location_type'] || '').trim().toLowerCase() === 'plts') pltsG[idpel] = true;
                         // Daya diambil dari baris dengan TANGGAL TERBARU (bukan baris terakhir di file)
                         const tglRow = String(row['tanggal'] || '');
@@ -620,9 +630,10 @@
                         // Bandingkan daya CSV dengan daya bulan data terdekat sebelum bulan upload
                         const bulanSblmUp = Object.keys(entry.data_bulanan).filter(y => y < uploadYM).sort().pop();
                         const dayaLaluUp = (bulanSblmUp && entry.data_bulanan[bulanSblmUp].daya !== dTerakhir) ? entry.data_bulanan[bulanSblmUp].daya : null;
-                        if (sumG[idpel] && countG[idpel] > 0) {
+                        if (countG[idpel] > 0) {
                             historyLengkap[uploadYM] = { avg: sumG[idpel] / countG[idpel], daya: dTerakhir, plts: !!pltsG[idpel], dayaLalu: dayaLaluUp };
                         } else {
+                            // Pelanggan ADA di CSV (punya base data) tetapi semua selnya kosong -> tampil 0, bukan no data
                             historyLengkap[uploadYM] = { avg: 0, daya: dTerakhir, plts: !!pltsG[idpel], dayaLalu: dayaLaluUp };
                         }
                         
@@ -636,6 +647,19 @@
                             notes: ambilCatatan(idpel, entry.notes) 
                         });
                     }
+                    // Pelanggan yang ada di CSV tetapi belum pernah ada di database tetap ditampilkan;
+                    // bulan-bulan sebelumnya otomatis tampil abu-abu "no data".
+                    idpelAktifBulanIni.forEach(idpel => {
+                        if (trendMaster[idpel]) return;
+                        const dBaru = metaD[idpel] || 0;
+                        const dataBaru = {};
+                        dataBaru[uploadYM] = { avg: countG[idpel] > 0 ? sumG[idpel] / countG[idpel] : 0, daya: dBaru, plts: !!pltsG[idpel], dayaLalu: null };
+                        arrayHasilMenu2.push({
+                            idpel: idpel, nama: metaNama[idpel] || '-',
+                            up3: metaUp3[idpel] || '-', ulp: metaUlp[idpel] || '-',
+                            dayaCsv: dBaru, semuaBulanData: dataBaru, notes: ambilCatatan(idpel, null)
+                        });
+                    });
                     renderSaringanMenu2();
                     btn.disabled = false; btn.className = "btn btn-primary"; btn.innerHTML = "📈 Jalankan Analisis Menu 1";
                 });
@@ -668,9 +692,12 @@
             let counter = 0;
             
             arrayHasilMenu2.forEach(row => {
-                const dA = row.semuaBulanData[bulanAkhir] || { avg: 0, daya: 0 };
-                const dS = bulanSebelum ? (row.semuaBulanData[bulanSebelum] || { avg: 0, daya: 0 }) : { avg: 0, daya: 0 };
-                let devMoM = dS.avg > 0 ? (dA.avg - dS.avg) / dS.avg : 0;
+                // 'no data' = idpel tidak punya base data di bulan itu (tidak ada barisnya); beda dengan nol
+                const adaData = o => !!o && o.avg !== null && o.avg !== undefined;
+                const dA = row.semuaBulanData[bulanAkhir] || { avg: null, daya: 0 };
+                const dS = bulanSebelum ? (row.semuaBulanData[bulanSebelum] || { avg: null, daya: 0 }) : { avg: null, daya: 0 };
+                const bisaBanding = adaData(dA) && adaData(dS);
+                let devMoM = (bisaBanding && dS.avg > 0) ? (dA.avg - dS.avg) / dS.avg : 0;
                 // PLTS: bulan akhir atau bulan pembanding berstatus PLTS -> deviasi netral & dikecualikan dari filter anomali
                 const adaPlts = !!(dA.plts || dS.plts);
                 if (sembunyiPlts && adaPlts) return;
@@ -679,17 +706,24 @@
                 
                 if (lolos && lolosFilterUnit(row, '2') && lolosFilterDaya(row.dayaCsv, '2')) {
                     counter++; const tr = document.createElement('tr');
-                    const textMoM = adaPlts ? "☀️ PLTS" : (dS.avg === 0 ? "-" : (devMoM > 0 ? "+" : "") + (devMoM * 100).toFixed(1) + "%");
-                    const kelasMoM = adaPlts ? 'text-neutral' : (devMoM >= 0 ? 'text-plus' : 'text-minus');
+                    const textMoM = adaPlts ? "☀️ PLTS" : (!bisaBanding ? "no data" : (dS.avg === 0 ? "-" : (devMoM > 0 ? "+" : "") + (devMoM * 100).toFixed(1) + "%"));
+                    const kelasMoM = adaPlts ? 'text-neutral' : (!bisaBanding ? 'text-nodata' : (devMoM >= 0 ? 'text-plus' : 'text-minus'));
+                    const nilaiUrutMoM = adaPlts ? 0 : (!bisaBanding ? -999 : devMoM);
                     const canvasId = "canvas_m2_" + row.idpel;
                     let barisHtml = `<td><span class="badge bg-secondary">${row.idpel}</span><span class="small-text">${row.up3} / ${row.ulp}</span></td><td><strong>${row.nama}</strong></td>
                                   <td class="text-center-cell" style="vertical-align:middle;"><canvas id="${canvasId}" width="120" height="26"></canvas></td>`;
                     let points = [];
                     listBulanTerpilihUser.forEach(ym => {
-                        let obj = row.semuaBulanData[ym] || { avg: 0, daya: 0 }; points.push(obj.avg);
+                        const obj = row.semuaBulanData[ym];
+                        if (!adaData(obj)) {
+                            points.push(null);
+                            barisHtml += `<td class="cell-nodata" data-v="-1">no data</td>`;
+                            return;
+                        }
+                        points.push(obj.avg);
                         barisHtml += `<td class="text-end" data-v="${obj.avg}"><strong>${formatEnergi(obj.avg)}</strong><br><span class="sub-daya-info">${obj.daya>0?obj.daya.toLocaleString()+' VA':'-'}</span>${obj.plts ? '<span class="badge-plts" title="Bulan ini berstatus PLTS">☀️ PLTS</span>' : ''}${obj.dayaLalu ? `<span class="badge-daya" title="Daya berubah dari ${obj.dayaLalu.toLocaleString()} VA ke ${obj.daya.toLocaleString()} VA (pengukuran berbeda)">⚡ Daya berubah</span>` : ''}</td>`;
                     });
-                    barisHtml += `<td class="text-end ${kelasMoM} fw-bold" data-v="${adaPlts ? 0 : devMoM}" style="vertical-align:middle;">${textMoM}${(dA.dayaLalu || dS.dayaLalu) ? ' <span title="Ada perubahan daya pada bulan yang dibandingkan, deviasi kurang sebanding">⚡</span>' : ''}</td>
+                    barisHtml += `<td class="text-end ${kelasMoM} fw-bold" data-v="${nilaiUrutMoM}" style="vertical-align:middle;">${textMoM}${(dA.dayaLalu || dS.dayaLalu) ? ' <span title="Ada perubahan daya pada bulan yang dibandingkan, deviasi kurang sebanding">⚡</span>' : ''}</td>
                                   <td style="font-size:11px;">${row.notes ? row.notes.pesan : '-'} <br><button onclick="bukaFormCatatan('${row.idpel}')" class="btn btn-primary" style="padding:2px 5px; font-size:10px;">📝 Update</button></td>`;
                     tr.innerHTML = barisHtml; tbody.appendChild(tr);
                     drawSparklineDinamis(canvasId, points);
@@ -708,20 +742,28 @@
         function drawSparklineDinamis(canvasId, points) {
             const canvas = document.getElementById(canvasId); if (!canvas) return;
             const ctx = canvas.getContext('2d');
-            const maxV = Math.max(...points, 1.0); const minV = Math.min(...points, 0.0);
-            const range = maxV - minV;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.beginPath(); ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 2.5;
+            // Bulan 'no data' (null) tidak digambar sebagai nol: garis terputus di bulan kosong
+            const valid = points.filter(p => p !== null && p !== undefined);
+            if (valid.length === 0) return;
+            const maxV = Math.max(...valid, 1.0); const minV = Math.min(...valid, 0.0);
+            const range = maxV - minV;
             const stepX = canvas.width / (points.length - 1 || 1);
-            let coords = [];
-            points.forEach((p, i) => {
-                const x = i * stepX; const y = canvas.height - ((p - minV) / range * (canvas.height - 8) + 4);
-                coords.push({x:x, y:y}); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            const coords = points.map((p, i) => (p === null || p === undefined) ? null
+                : { x: i * stepX, y: canvas.height - ((p - minV) / range * (canvas.height - 8) + 4) });
+            ctx.beginPath(); ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 2.5;
+            let pena = false;
+            coords.forEach(c => {
+                if (!c) { pena = false; return; }
+                if (!pena) { ctx.moveTo(c.x, c.y); pena = true; } else { ctx.lineTo(c.x, c.y); }
             });
             ctx.stroke();
+            let idxAkhirValid = -1;
+            coords.forEach((c, i) => { if (c) idxAkhirValid = i; });
             coords.forEach((c, i) => {
-                ctx.beginPath(); ctx.arc(c.x, c.y, i === coords.length-1 ? 3.5 : 2.5, 0, 2 * Math.PI);
-                ctx.fillStyle = i === coords.length-1 ? '#dc3545' : '#718096';
+                if (!c) return;
+                ctx.beginPath(); ctx.arc(c.x, c.y, i === idxAkhirValid ? 3.5 : 2.5, 0, 2 * Math.PI);
+                ctx.fillStyle = i === idxAkhirValid ? '#dc3545' : '#718096';
                 ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
             });
         }
