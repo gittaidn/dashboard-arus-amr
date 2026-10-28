@@ -131,6 +131,9 @@
                     <label class="label-picker">🎯 Filter Deviasi ($N-1$):</label>
                     <select id="filterDeviasi2" class="form-select text-danger" onchange="prosesSaringanDropdownMenu2Only()">
                         <option value="SHOW_ALL">✨ TAMPILKAN SEMUA (Tanpa Filter)</option>
+                        <option value="TREN_POSITIF">📈 Semua tren positif (naik)</option>
+                        <option value="TREN_NEGATIF">📉 Semua tren negatif (turun)</option>
+                        <option value="SELAIN_NODATA">✅ Selain no data</option>
                         <option value="PLUS_50">Lonjakan Average: ≥ 50%</option>
                         <option value="PLUS_70">Lonjakan Average: ≥ 70%</option>
                         <option value="PLUS_90">Lonjakan Average: ≥ 90%</option>
@@ -701,8 +704,14 @@
                 // PLTS: bulan akhir atau bulan pembanding berstatus PLTS -> deviasi netral & dikecualikan dari filter anomali
                 const adaPlts = !!(dA.plts || dS.plts);
                 if (sembunyiPlts && adaPlts) return;
-                let lolos = filterOpt === "SHOW_ALL" || (filterOpt.startsWith("PLUS") && devMoM >= parseFloat(filterOpt.split('_')[1])/100) || (filterOpt.startsWith("MINUS") && devMoM <= -parseFloat(filterOpt.split('_')[1])/100);
-                if (adaPlts && filterOpt !== "SHOW_ALL") lolos = false;
+                let lolos;
+                if (filterOpt === "SHOW_ALL") lolos = true;
+                else if (filterOpt === "SELAIN_NODATA") lolos = bisaBanding;                                  // bulan akhir & pembanding sama-sama punya data
+                else if (filterOpt === "TREN_POSITIF") lolos = bisaBanding && dS.avg > 0 && devMoM > 0;      // naik dibanding bulan sebelumnya
+                else if (filterOpt === "TREN_NEGATIF") lolos = bisaBanding && dS.avg > 0 && devMoM < 0;      // turun dibanding bulan sebelumnya
+                else lolos = (filterOpt.startsWith("PLUS") && devMoM >= parseFloat(filterOpt.split('_')[1])/100) || (filterOpt.startsWith("MINUS") && devMoM <= -parseFloat(filterOpt.split('_')[1])/100);
+                // Pelanggan PLTS dikecualikan dari penilaian naik/turun; tetap tampil di "Tampilkan semua" dan "Selain no data"
+                if (adaPlts && filterOpt !== "SHOW_ALL" && filterOpt !== "SELAIN_NODATA") lolos = false;
                 
                 if (lolos && lolosFilterUnit(row, '2') && lolosFilterDaya(row.dayaCsv, '2')) {
                     counter++; const tr = document.createElement('tr');
