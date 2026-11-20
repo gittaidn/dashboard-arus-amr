@@ -64,6 +64,23 @@
         .text-neutral { color: #6c757d; font-weight: bold; }
         .badge-plts { background: #fff3cd; color: #856404; border: 1px solid #ffe08a; font-size: 10px; padding: 1px 4px; border-radius: 3px; display: block; width: fit-content; margin: 2px 0 0 auto; }
         canvas { background: #fff; border: 1px solid #e0e0e0; border-radius: 4px; }
+        /* Detail bacaan harian (klik sel bulan di Menu 1) */
+        .sel-klik { cursor: pointer; }
+        .sel-klik:hover { outline: 2px solid #0d6efd; outline-offset: -2px; background: #eef4ff; }
+        #modalHarian { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 9000; align-items: center; justify-content: center; padding: 15px; }
+        #modalHarian.open { display: flex; }
+        #modalHarianBox { background: #fff; border-radius: 12px; width: 100%; max-width: 980px; max-height: 92vh; overflow: auto; padding: 18px 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+        #modalHarianBox h3 { margin: 0 0 4px 0; font-size: 17px; color: #1e3a8a; }
+        .ringkas-harian { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+        .ringkas-harian div { background: #f1f3f9; border-radius: 8px; padding: 6px 12px; font-size: 12px; color: #495057; }
+        .ringkas-harian strong { display: block; font-size: 15px; color: #1e3a8a; }
+        .ringkas-harian .nol strong { color: #dc3545; }
+        #tabelHarian { margin-top: 8px; }
+        #tabelHarian th, #tabelHarian td { padding: 4px 8px; font-size: 12px; text-align: right; white-space: nowrap; }
+        #tabelHarian td:first-child, #tabelHarian th:first-child { text-align: left; }
+        #tabelHarian tr.baris-nol td { background: #fde8ea !important; color: #b02a37; font-weight: bold; }
+        #tabelHarianWrap { max-height: 34vh; overflow: auto; border: 1px solid #dee2e6; }
+        #tabelHarianWrap thead th { position: sticky; top: 0; }
         .label-picker { font-size: 13px; font-weight: bold; color: #495057; display: block; margin-bottom: 4px; }
         .sub-daya-info { font-size: 11px; color: #6f42c1; font-weight: bold; display: block; margin-top: 2px; }
         #loadingOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10000; font-weight: bold; font-size: 18px; color: #1e3a8a; }
@@ -244,6 +261,19 @@
         </div>
     </div>
 
+    <div id="modalHarian" onclick="if(event.target===this)tutupDetailHarian()">
+        <div id="modalHarianBox">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+                <div>
+                    <h3 id="judulHarian"></h3>
+                    <div id="subjudulHarian" style="font-size:12px; color:#6c757d;"></div>
+                </div>
+                <button onclick="tutupDetailHarian()" class="btn btn-primary" style="width:auto; padding:6px 14px; font-size:13px; background:#6c757d;">✖ Tutup</button>
+            </div>
+            <div id="isiHarian"></div>
+        </div>
+    </div>
+
     <script>
         let trendMaster = {};
         let rowsJuniCache = null;
@@ -251,6 +281,7 @@
         let urutanBulanDinamis = []; 
         let listBulanTerpilihUser = [];
         let arahSortState = true;
+        let bulanHarianTersedia = null; // dari data_historical.json ('harian'); null = format lama, semua dianggap ada
         let daftarBulanDatabase = []; // Diisi otomatis dari isi data_historical.json
         let uploadYMDetected = null;  // Bulan asli file CSV uploadan (dari kolom tanggal)
 
@@ -405,6 +436,7 @@
                 // ==========================================================
                 if (data.versi && data.versi >= 10) {
                     daftarBulanDatabase = data.bulan;
+                    bulanHarianTersedia = data.harian || null;
                     trendMaster = {};
                     for (let id in data.trend_master) {
                         const e = data.trend_master[id];
@@ -730,7 +762,8 @@
                             return;
                         }
                         points.push(obj.avg);
-                        barisHtml += `<td class="text-end" data-v="${obj.avg}"><strong>${formatEnergi(obj.avg)}</strong><br><span class="sub-daya-info">${obj.daya>0?obj.daya.toLocaleString()+' VA':'-'}</span>${obj.plts ? '<span class="badge-plts" title="Bulan ini berstatus PLTS">☀️ PLTS</span>' : ''}${obj.dayaLalu ? `<span class="badge-daya" title="Daya berubah dari ${obj.dayaLalu.toLocaleString()} VA ke ${obj.daya.toLocaleString()} VA (pengukuran berbeda)">⚡ Daya berubah</span>` : ''}</td>`;
+                        const bisaKlik = (ym === uploadYMDetected) || !bulanHarianTersedia || bulanHarianTersedia.indexOf(ym) !== -1;
+                        barisHtml += `<td class="text-end${bisaKlik ? ' sel-klik' : ''}" data-v="${obj.avg}"${bisaKlik ? ` onclick="bukaDetailHarian('${row.idpel}','${ym}')" title="Klik untuk melihat semua bacaan bulan ini"` : ''}><strong>${formatEnergi(obj.avg)}</strong><br><span class="sub-daya-info">${obj.daya>0?obj.daya.toLocaleString()+' VA':'-'}</span>${obj.plts ? '<span class="badge-plts" title="Bulan ini berstatus PLTS">☀️ PLTS</span>' : ''}${obj.dayaLalu ? `<span class="badge-daya" title="Daya berubah dari ${obj.dayaLalu.toLocaleString()} VA ke ${obj.daya.toLocaleString()} VA (pengukuran berbeda)">⚡ Daya berubah</span>` : ''}</td>`;
                     });
                     barisHtml += `<td class="text-end ${kelasMoM} fw-bold" data-v="${nilaiUrutMoM}" style="vertical-align:middle;">${textMoM}${(dA.dayaLalu || dS.dayaLalu) ? ' <span title="Ada perubahan daya pada bulan yang dibandingkan, deviasi kurang sebanding">⚡</span>' : ''}</td>
                                   <td style="font-size:11px;">${row.notes ? row.notes.pesan : '-'} <br><button onclick="bukaFormCatatan('${row.idpel}')" class="btn btn-primary" style="padding:2px 5px; font-size:10px;">📝 Update</button></td>`;
@@ -741,6 +774,161 @@
             document.getElementById('notifAman2').style.display = counter === 0 ? 'block' : 'none';
             document.getElementById('containerHasil2').style.display = counter === 0 ? 'none' : 'block';
             let fV = document.getElementById('searchMenu2').value; if(fV) cariTabelLokal('tabelAudit2', 'searchMenu2');
+        }
+
+        // ==========================================================
+        // DETAIL BACAAN HARIAN (klik sel bulan di Menu 1)
+        // - Bulan file CSV unggahan : dibaca langsung dari CSV di browser
+        // - Bulan lain              : mengunduh harian_YYYY-MM.json (hanya saat diklik, lalu disimpan sementara)
+        // Format file harian: {d: {idpel: [menit, r, s, t, menit, r, s, t, ...]}}, menit = menit sejak tgl 1 pukul 00:00.
+        // ==========================================================
+        const harianCache = {};
+        let harianCsvIndex = null;
+        let dataDetailHarian = null;
+        const NAMA_HARI = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+
+        function muatHarianBulan(ym) {
+            if (!harianCache[ym]) {
+                harianCache[ym] = fetch('harian_' + ym + '.json')
+                    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                    .catch(e => { delete harianCache[ym]; throw e; });
+            }
+            return harianCache[ym];
+        }
+
+        function indeksHarianCsv() {
+            if (harianCsvIndex && harianCsvIndex.src === rowsJuniCache && harianCsvIndex.ym === uploadYMDetected) return harianCsvIndex.map;
+            const map = {};
+            const [uy, um] = uploadYMDetected.split('-').map(Number);
+            const awal = Date.UTC(uy, um - 1, 1);
+            rowsJuniCache.forEach(row => {
+                const idRaw = row['idpel']; if (!idRaw) return;
+                const idpel = String(idRaw).replace(/\.0$/, '').trim();
+                const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(String(row['tanggal'] || '').trim());
+                if (!m) return;
+                const nil = KOLOM_NILAI.map(k => { const v = parseFloat(String(row[k] == null ? '' : row[k]).trim().replace(',', '.')); return isNaN(v) ? null : Math.abs(v); });
+                if (nil.every(v => v === null)) return;
+                const menit = Math.round((Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]) - awal) / 60000);
+                (map[idpel] = map[idpel] || []).push([menit, nil[0], nil[1], nil[2]]);
+            });
+            for (const id in map) {
+                map[id].sort((a, b) => a[0] - b[0]);
+                map[id] = [].concat(...map[id]);
+            }
+            harianCsvIndex = { src: rowsJuniCache, ym: uploadYMDetected, map: map };
+            return map;
+        }
+
+        function labelWaktu(ym, menit) {
+            const [y, mo] = ym.split('-').map(Number);
+            const tgl = new Date(Date.UTC(y, mo - 1, 1) + menit * 60000);
+            const p = n => String(n).padStart(2, '0');
+            return { hari: NAMA_HARI[tgl.getUTCDay()], tgl: p(tgl.getUTCDate()) + '/' + p(tgl.getUTCMonth() + 1),
+                     jam: p(tgl.getUTCHours()) + ':' + p(tgl.getUTCMinutes()), akhirPekan: [0, 6].includes(tgl.getUTCDay()) };
+        }
+
+        function tutupDetailHarian() { document.getElementById('modalHarian').classList.remove('open'); }
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') tutupDetailHarian(); });
+
+        async function bukaDetailHarian(idpel, ym) {
+            const barisInfo = arrayHasilMenu2.find(r => r.idpel === idpel);
+            document.getElementById('judulHarian').innerText = (barisInfo ? barisInfo.nama : '') + ' — ' + idpel;
+            document.getElementById('subjudulHarian').innerText = 'Bacaan ' + konversiLabelBulan(ym) + ' (nilai energi per bacaan, R+S+T)';
+            const isi = document.getElementById('isiHarian');
+            isi.innerHTML = '<p style="padding:20px 0;">⏳ Memuat bacaan...</p>';
+            document.getElementById('modalHarian').classList.add('open');
+            let flat;
+            try {
+                if (ym === uploadYMDetected && rowsJuniCache) {
+                    flat = indeksHarianCsv()[idpel];
+                } else {
+                    const f = await muatHarianBulan(ym);
+                    flat = f.d[idpel];
+                }
+            } catch (err) {
+                isi.innerHTML = '<p class="text-danger fw-bold" style="padding:15px 0;">❌ File <code>harian_' + ym + '.json</code> tidak ditemukan / gagal dimuat (' + err.message + '). Jalankan ulang skrip Python lalu upload semua file harian_*.json ke GitHub.</p>';
+                return;
+            }
+            if (!flat || flat.length === 0) {
+                isi.innerHTML = '<p style="padding:15px 0;">Tidak ada bacaan untuk pelanggan ini di bulan ' + konversiLabelBulan(ym) + '.</p>';
+                return;
+            }
+            const baca = [];
+            for (let i = 0; i < flat.length; i += 4) {
+                const f = [flat[i + 1], flat[i + 2], flat[i + 3]];
+                const ada = f.filter(v => v !== null && v !== undefined);
+                baca.push({ menit: flat[i], r: f[0], s: f[1], t: f[2], total: ada.reduce((a, b) => a + b, 0) });
+            }
+            dataDetailHarian = { ym: ym, baca: baca };
+            const nNol = baca.filter(b => b.total === 0).length;
+            const rata = baca.reduce((a, b) => a + b.total, 0) / baca.length;
+            const maks = Math.max(...baca.map(b => b.total));
+            isi.innerHTML =
+                '<div class="ringkas-harian">' +
+                '<div>Jumlah bacaan<strong>' + baca.length + '</strong></div>' +
+                '<div>Rata-rata<strong>' + formatEnergi(rata) + '</strong></div>' +
+                '<div>Maksimum<strong>' + formatEnergi(maks) + '</strong></div>' +
+                '<div class="nol">Bacaan nol<strong>' + nNol + '</strong></div></div>' +
+                '<canvas id="grafikHarian" height="230" style="width:100%;"></canvas>' +
+                '<div style="font-size:11px; color:#6c757d; margin:4px 0;">Titik biru = bacaan, titik merah = bacaan nol, garis oranye = rata-rata per hari, latar abu-abu = Sabtu/Minggu.</div>' +
+                '<label style="font-size:12px; cursor:pointer;"><input type="checkbox" id="hanyaNolHarian" onchange="renderTabelHarian()"> Hanya tampilkan bacaan nol</label>' +
+                '<div id="tabelHarianWrap"><table id="tabelHarian"><thead><tr><th>Waktu</th><th>R</th><th>S</th><th>T</th><th>Total</th></tr></thead><tbody></tbody></table></div>';
+            renderTabelHarian();
+            gambarGrafikHarian();
+        }
+
+        function renderTabelHarian() {
+            if (!dataDetailHarian) return;
+            const hanyaNol = document.getElementById('hanyaNolHarian').checked;
+            const fmt = v => (v === null || v === undefined) ? '-' : formatEnergi(v);
+            const tb = document.querySelector('#tabelHarian tbody');
+            tb.innerHTML = dataDetailHarian.baca.filter(b => !hanyaNol || b.total === 0).map(b => {
+                const w = labelWaktu(dataDetailHarian.ym, b.menit);
+                return '<tr class="' + (b.total === 0 ? 'baris-nol' : '') + '"><td>' + w.hari + ' ' + w.tgl + ' ' + w.jam + '</td><td>' + fmt(b.r) + '</td><td>' + fmt(b.s) + '</td><td>' + fmt(b.t) + '</td><td><strong>' + formatEnergi(b.total) + '</strong></td></tr>';
+            }).join('');
+        }
+
+        function gambarGrafikHarian() {
+            const cv = document.getElementById('grafikHarian'); if (!cv || !dataDetailHarian) return;
+            const { ym, baca } = dataDetailHarian;
+            const W = cv.width = Math.max(320, cv.clientWidth || 900), H = cv.height = 230;
+            const ctx = cv.getContext('2d');
+            const [y, mo] = ym.split('-').map(Number);
+            const hariBulan = new Date(Date.UTC(y, mo, 0)).getUTCDate();
+            const totalMenit = Math.max(hariBulan * 1440, ...baca.map(b => b.menit + 1));
+            const kiri = 48, kanan = 8, atas = 10, bawah = 24;
+            const maxV = Math.max(...baca.map(b => b.total), 1) * 1.08;
+            const X = m => kiri + (m / totalMenit) * (W - kiri - kanan);
+            const Y = v => H - bawah - (v / maxV) * (H - atas - bawah);
+            ctx.clearRect(0, 0, W, H);
+            // latar akhir pekan + label tanggal
+            ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+            for (let d = 0; d < Math.ceil(totalMenit / 1440); d++) {
+                const w = labelWaktu(ym, d * 1440);
+                if (w.akhirPekan) { ctx.fillStyle = '#eef0f3'; ctx.fillRect(X(d * 1440), atas, X((d + 1) * 1440) - X(d * 1440), H - atas - bawah); }
+                if ((d + 1) % 5 === 0 || d === 0) { ctx.fillStyle = '#6c757d'; ctx.fillText(String(d + 1), X(d * 1440 + 720), H - 8); }
+            }
+            // sumbu Y
+            ctx.textAlign = 'right'; ctx.fillStyle = '#6c757d'; ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const v = maxV * i / 4 / 1.08 * 1.08, yy = Y(v);
+                ctx.beginPath(); ctx.moveTo(kiri, yy); ctx.lineTo(W - kanan, yy); ctx.stroke();
+                ctx.fillText(formatEnergi(v), kiri - 4, yy + 3);
+            }
+            // rata-rata per hari
+            const perHari = {};
+            baca.forEach(b => { const d = Math.floor(b.menit / 1440); (perHari[d] = perHari[d] || []).push(b.total); });
+            ctx.beginPath(); ctx.strokeStyle = '#fd7e14'; ctx.lineWidth = 1.8;
+            let mulai = true;
+            Object.keys(perHari).map(Number).sort((a, b) => a - b).forEach(d => {
+                const r = perHari[d].reduce((a, b) => a + b, 0) / perHari[d].length;
+                const px = X(d * 1440 + 720), py = Y(r);
+                if (mulai) { ctx.moveTo(px, py); mulai = false; } else ctx.lineTo(px, py);
+            });
+            ctx.stroke();
+            // titik bacaan (nol digambar paling atas)
+            baca.filter(b => b.total !== 0).forEach(b => { ctx.beginPath(); ctx.arc(X(b.menit), Y(b.total), 2.6, 0, 6.2832); ctx.fillStyle = '#2563eb'; ctx.fill(); });
+            baca.filter(b => b.total === 0).forEach(b => { ctx.beginPath(); ctx.arc(X(b.menit), Y(0), 4, 0, 6.2832); ctx.fillStyle = '#dc3545'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke(); });
         }
 
         function bukaFormCatatan(idpel) {
